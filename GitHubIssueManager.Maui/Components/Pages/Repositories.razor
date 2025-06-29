@@ -138,7 +138,7 @@ else
                     <div class="mb-3">
                         <label class="form-label">Task JSON (MCP Format)</label>
                         <textarea class="form-control" rows="6" readonly>@GetTaskJson()</textarea>
-                        <small class="form-text text-muted">This JSON will be used to create the GitHub issue following MCP standards.</small>
+                        <small class="form-text text-muted">This JSON shows the MCP metadata that will be included with the GitHub issue.</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -286,7 +286,7 @@ else
         
         try
         {
-            var taskBody = GetTaskJson();
+            var taskBody = GetFormattedIssueBody();
             await GitHubService.CreateIssueAsync(selectedRepository.Owner.Login, selectedRepository.Name, newTaskTitle, taskBody);
             CloseAddTaskModal();
             
@@ -329,5 +329,27 @@ else
         { 
             WriteIndented = true 
         });
+    }
+    
+    private string GetFormattedIssueBody()
+    {
+        // Use the task description as the main body content
+        var body = newTaskDescription ?? "";
+        
+        // Add MCP metadata in a structured, human-readable format
+        var mcpMetadata = $@"
+
+---
+
+**Task Metadata (MCP v1.0)**
+- **Type**: Task
+- **Status**: Open  
+- **Priority**: Medium
+- **Created**: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC
+- **Repository**: {selectedRepository?.FullName ?? ""}
+
+<!-- MCP JSON: {GetTaskJson().Replace("<!--", "").Replace("-->", "")} -->";
+
+        return body + mcpMetadata;
     }
 }
