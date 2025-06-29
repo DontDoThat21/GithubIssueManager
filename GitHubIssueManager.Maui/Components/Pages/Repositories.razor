@@ -216,7 +216,7 @@ else
             {
                 repositories = allRepos.Where(r => 
                     r.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
-                    r.Description?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false ||
+                    (r.Description?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     r.Owner.Login.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
                     .ToList();
             }
