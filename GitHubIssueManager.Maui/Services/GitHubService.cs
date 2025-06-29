@@ -138,8 +138,7 @@ public class GitHubService
     {
         try
         {
-            var issues = await _client.Issue.GetAllForRepository(owner, repo);
-            var issue = issues.FirstOrDefault(i => i.Number == issueNumber);
+            var issue = await _client.Issue.Get(owner, repo, issueNumber);
             
             if (issue == null) return false;
             
