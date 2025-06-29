@@ -1,97 +1,70 @@
-bin/
-obj/
-*.user
-*.suo
-*.cache
-*.docstates
-[Dd]ebug/
-[Rr]elease/
-*.vspscc
-*_i.c
-*_p.c
-*.ncb
-*.suo
-*.tlb
-*.tlh
-*.bak
-*.[Cc]ache
-*.ilk
-*.log
-*.lib
-*.sbr
-*.scc
-[Bb]in
-[Dd]ebug*/
-obj/
-[Rr]elease*/
-_ReSharper*/
-[Tt]est[Rr]esult*
-*.vssscc
-$tf*/
-*.user
-*.aps
-*.pch
-*.vspscc
-*_i.c
-*_p.c
-*.ncb
-*.suo
-*.tlb
-*.tlh
-*.bak
-*.cache
-*.ilk
-*.log
-[Bb]in
-[Dd]ebug*/
-obj/
-[Rr]elease*/
-_ReSharper*/
-[Tt]est[Rr]esult*
-*.vssscc
-$tf*/
-
-# User-specific files
-*.suo
-*.user
-*.sln.docstates
+# .NET, Visual Studio, Blazor, and MAUI ignores
 
 # Build results
+bin/
+obj/
 [Dd]ebug/
 [Rr]elease/
 [Bb]in/
 [Oo]bj/
 
-# MSTest test Results
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
+# User-specific files
+*.suo
+*.user
+*.sln.docstates
+*.userosscache
+*.sln.ide
 
-# Visual Studio profiler
+# Visual Studio
+.vs/
+*.vssscc
+*.vspscc
+*.scc
+*.cache
+*.ncb
+*.aps
+*.suo
+*.bak
+*.ilk
+*.log
+*.lib
+*.sbr
+*.tlb
+*.tlh
+*.pch
+*.pdb
+*.dbmdl
 *.psess
 *.vsp
 *.vspx
-
-# Guidance Automation Toolkit
 *.gpState
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.VC.opendb
 
-# ReSharper is a .NET coding add-in
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# ReSharper
 _ReSharper*/
 *.[Rr]e[Ss]harper
 
-# TeamCity is a build add-in
+# TeamCity
 _TeamCity*
 
-# DotCover is a Code Coverage Tool
+# DotCover
 *.dotCover
 
 # NCrunch
 *.ncrunch*
 .*crunch*.local.xml
 
-# Installshield output folder
+# Installshield
 [Ee]xpress/
 
-# DocProject is a documentation generator add-in
+# DocProject
 DocProject/buildhelp/
 DocProject/Help/*.HxT
 DocProject/Help/*.HxC
@@ -101,37 +74,59 @@ DocProject/Help/*.hhp
 DocProject/Help/Html2
 DocProject/Help/html
 
-# Click-Once directory
+# Click-Once
 publish/
 
 # Publish Web Output
 *.Publish.xml
 
-# NuGet Packages Directory
-## TODO: If you have NuGet Package Restore enabled, uncomment the next line
+# NuGet
 #packages/
 
-# Windows Azure Build Output
+# Azure
 csx
 *.build.csdef
 
-# Windows Store app package directory
+# Windows Store
 AppPackages/
 
-# Others
-sql/
-*.Cache
-ClientBin/
-[Ss]tyle[Cc]op.*
-~$*
-*~
-*.dbmdl
-*.[Pp]ublish.xml
-*.pfx
-*.publishsettings
-
-# Data directory
+# Data
 Data/
 
 # macOS
 .DS_Store
+
+# Node/npm (for Blazor WASM or hybrid projects)
+node_modules/
+wwwroot/dist/
+wwwroot/node_modules/
+
+# Blazor/MAUI specific
+wwwroot/appsettings.*.json
+wwwroot/*.db
+
+# Launch settings and local config
+Properties/launchSettings.json
+appsettings.Development.json
+appsettings.Local.json
+
+# SQLite and local data
+*.db
+*.sqlite
+*.db3
+*.mdf
+*.ldf
+
+# Others
+sql/
+ClientBin/
+[Ss]tyle[Cc]op.*
+~$*
+*~
+*.pfx
+*.publishsettings
+
+# Ignore local secrets
+secrets.json
+
+# Remove duplicate and legacy entries
