@@ -13,6 +13,7 @@ public class AuthenticationService
     private readonly string _dataPath;
     private string? _currentToken;
     private string? _currentJwtToken;
+    private const string FallbackSecretKey = "your-secret-key-here-must-be-at-least-32-characters-long";
 
     public AuthenticationService(ILogger<AuthenticationService> logger, IWebHostEnvironment environment, IConfiguration configuration)
     {
