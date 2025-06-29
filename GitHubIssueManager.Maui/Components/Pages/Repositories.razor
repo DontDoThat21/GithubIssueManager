@@ -31,6 +31,13 @@ else
         </div>
     </div>
 
+    @if (!isLoading && repositories.Any())
+    {
+        <div class="mb-3">
+            <span class="badge bg-info">@repositories.Count Repository@(repositories.Count == 1 ? "" : "s")</span>
+        </div>
+    }
+
     @if (isLoading)
     {
         <div class="text-center">
@@ -58,13 +65,15 @@ else
                             <p class="card-text">@repo.Description</p>
                             <div class="row text-muted small mb-2">
                                 <div class="col">
-                                    <i class="bi bi-star"></i> @repo.StargazersCount
+                                    <i class="bi bi-star"></i> @repo.StargazersCount Stars
                                 </div>
                                 <div class="col">
-                                    <i class="bi bi-diagram-3"></i> @repo.ForksCount
+                                    <i class="bi bi-diagram-3"></i> @repo.ForksCount Forks
                                 </div>
                                 <div class="col">
-                                    <i class="bi bi-exclamation-circle"></i> @repo.OpenIssuesCount
+                                    <a href="/issues/@repo.Owner.Login/@repo.Name" class="text-decoration-none">
+                                        <i class="bi bi-exclamation-circle"></i> @repo.OpenIssuesCount Issues
+                                    </a>
                                 </div>
                             </div>
                             @if (!string.IsNullOrEmpty(repo.Language))
@@ -90,6 +99,9 @@ else
                                     Add to Watchlist
                                 </button>
                             }
+                            <button class="btn btn-sm btn-success ms-2" @onclick="() => ShowAddTaskModal(repo)">
+                                <i class="bi bi-plus-circle"></i> Add Task
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -104,10 +116,57 @@ else
     }
 }
 
+<!-- Add Task Modal -->
+@if (showAddTaskModal)
+{
+    <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Task to @selectedRepository?.Name</h5>
+                    <button type="button" class="btn-close" @onclick="CloseAddTaskModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="taskTitle" class="form-label">Task Title *</label>
+                        <input @bind="newTaskTitle" class="form-control" id="taskTitle" placeholder="Enter task title..." />
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskDescription" class="form-label">Task Description</label>
+                        <textarea @bind="newTaskDescription" class="form-control" id="taskDescription" rows="4" placeholder="Enter task description..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Task JSON (MCP Format)</label>
+                        <textarea class="form-control" rows="6" readonly>@GetTaskJson()</textarea>
+                        <small class="form-text text-muted">This JSON will be used to create the GitHub issue following MCP standards.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseAddTaskModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="CreateTask" disabled="@(string.IsNullOrWhiteSpace(newTaskTitle) || isCreatingTask)">
+                        @if (isCreatingTask)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Create Task
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<GitHubRepository> repositories = new();
     private string searchQuery = string.Empty;
     private bool isLoading = false;
+    
+    // Add Task Modal properties
+    private bool showAddTaskModal = false;
+    private bool isCreatingTask = false;
+    private GitHubRepository? selectedRepository = null;
+    private string newTaskTitle = string.Empty;
+    private string newTaskDescription = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -150,7 +209,21 @@ else
         try
         {
             var results = await GitHubService.GetRepositoriesAsync();
-            repositories = results.ToList();
+            var allRepos = results.ToList();
+            
+            // Filter by search query if one exists
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                repositories = allRepos.Where(r => 
+                    r.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    r.Description.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    r.Owner.Login.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+            else
+            {
+                repositories = allRepos;
+            }
         }
         catch (Exception ex)
         {
@@ -182,5 +255,79 @@ else
     {
         RepositoryService.RemoveRepository(repository.Id);
         StateHasChanged();
+    }
+    
+    private void ShowAddTaskModal(GitHubRepository repository)
+    {
+        selectedRepository = repository;
+        newTaskTitle = string.Empty;
+        newTaskDescription = string.Empty;
+        showAddTaskModal = true;
+        StateHasChanged();
+    }
+    
+    private void CloseAddTaskModal()
+    {
+        showAddTaskModal = false;
+        selectedRepository = null;
+        newTaskTitle = string.Empty;
+        newTaskDescription = string.Empty;
+        isCreatingTask = false;
+        StateHasChanged();
+    }
+    
+    private async Task CreateTask()
+    {
+        if (selectedRepository == null || string.IsNullOrWhiteSpace(newTaskTitle))
+            return;
+            
+        isCreatingTask = true;
+        StateHasChanged();
+        
+        try
+        {
+            var taskBody = GetTaskJson();
+            await GitHubService.CreateIssueAsync(selectedRepository.Owner.Login, selectedRepository.Name, newTaskTitle, taskBody);
+            CloseAddTaskModal();
+            
+            // Refresh the repository data to update issue count
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                await SearchRepositories();
+            }
+            else
+            {
+                await LoadMyRepositories();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating task: {ex.Message}");
+        }
+        finally
+        {
+            isCreatingTask = false;
+            StateHasChanged();
+        }
+    }
+    
+    private string GetTaskJson()
+    {
+        var task = new
+        {
+            type = "task",
+            title = newTaskTitle,
+            description = newTaskDescription,
+            status = "open",
+            priority = "medium",
+            created_at = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+            repository = selectedRepository?.FullName ?? "",
+            mcp_version = "1.0"
+        };
+        
+        return System.Text.Json.JsonSerializer.Serialize(task, new System.Text.Json.JsonSerializerOptions 
+        { 
+            WriteIndented = true 
+        });
     }
 }
