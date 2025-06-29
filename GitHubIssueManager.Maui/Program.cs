@@ -1,11 +1,64 @@
 using GitHubIssueManager.Maui.Components;
 using GitHubIssueManager.Maui.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Identity.Web;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Add controllers for API endpoints
+builder.Services.AddControllers();
+
+// 🆓 FREE Authentication Setup - No external services required!
+// 
+// This section configures authentication. Currently set up for FREE local JWT authentication.
+// Azure AD integration is optional and only activates if ClientId is configured.
+
+// Check for optional Azure AD configuration (enterprise feature)
+var azureAdSection = builder.Configuration.GetSection("AzureAd");
+if (!string.IsNullOrEmpty(azureAdSection["ClientId"]))
+{
+    // Azure AD mode (optional - only if ClientId is configured)
+    // Note: This requires Azure AD setup but has free tier available
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddMicrosoftIdentityWebApi(azureAdSection)
+        .EnableTokenAcquisitionToCallDownstreamApi()
+        .AddInMemoryTokenCaches();
+}
+else
+{
+    // 🎉 FREE Local Authentication Mode (Current Setup)
+    // No external dependencies, no subscriptions required!
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme);
+}
+
+// 🔐 Local JWT Bearer Authentication (FREE)
+// This handles token generation and validation completely locally
+var jwtSettings = builder.Configuration.GetSection("Authentication:Jwt");
+var key = Encoding.ASCII.GetBytes(jwtSettings["Key"] ?? "your-secret-key-here-must-be-at-least-32-characters-long");
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer("ApiJwt", options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidateAudience = true,
+            ValidAudience = jwtSettings["Audience"],
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 // Add GitHub Issue Manager services
 builder.Services.AddSingleton<AuthenticationService>();
@@ -26,9 +79,17 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
+
+// Add authentication middleware
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+// Map API controllers
+app.MapControllers();
 
 app.Run();
