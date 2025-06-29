@@ -1,0 +1,186 @@
+@page "/repositories"
+@using GitHubIssueManager.Maui.Models
+@using GitHubIssueManager.Maui.Services
+@inject GitHubService GitHubService
+@inject RepositoryService RepositoryService
+@inject AuthenticationService AuthService
+@rendermode InteractiveServer
+
+<PageTitle>Repositories</PageTitle>
+
+<h1>GitHub Repositories</h1>
+
+@if (!AuthService.IsAuthenticated)
+{
+    <div class="alert alert-warning">
+        <h4>Authentication Required</h4>
+        <p>Please configure your GitHub token in the <a href="/settings">Settings</a> page to access repositories.</p>
+    </div>
+}
+else
+{
+    <div class="mb-3">
+        <div class="row">
+            <div class="col-md-8">
+                <input @bind="searchQuery" @onkeypress="OnSearchKeyPress" class="form-control" placeholder="Search repositories..." />
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-primary" @onclick="SearchRepositories">Search</button>
+                <button class="btn btn-secondary ms-2" @onclick="LoadMyRepositories">My Repos</button>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (repositories.Any())
+    {
+        <div class="row">
+            @foreach (var repo in repositories)
+            {
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="@repo.HtmlUrl" target="_blank">@repo.Name</a>
+                                @if (repo.Private)
+                                {
+                                    <span class="badge bg-secondary ms-1">Private</span>
+                                }
+                            </h5>
+                            <h6 class="card-subtitle mb-2 text-muted">@repo.Owner.Login</h6>
+                            <p class="card-text">@repo.Description</p>
+                            <div class="row text-muted small mb-2">
+                                <div class="col">
+                                    <i class="bi bi-star"></i> @repo.StargazersCount
+                                </div>
+                                <div class="col">
+                                    <i class="bi bi-diagram-3"></i> @repo.ForksCount
+                                </div>
+                                <div class="col">
+                                    <i class="bi bi-exclamation-circle"></i> @repo.OpenIssuesCount
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(repo.Language))
+                            {
+                                <div class="mb-2">
+                                    <span class="badge bg-info">@repo.Language</span>
+                                </div>
+                            }
+                        </div>
+                        <div class="card-footer">
+                            @if (RepositoryService.IsWatched(repo.Id))
+                            {
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveFromWatchlist(repo)">
+                                    Remove from Watchlist
+                                </button>
+                                <a href="/issues/@repo.Owner.Login/@repo.Name" class="btn btn-sm btn-primary ms-2">
+                                    View Issues
+                                </a>
+                            }
+                            else
+                            {
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => AddToWatchlist(repo)">
+                                    Add to Watchlist
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (!isLoading)
+    {
+        <div class="alert alert-info">
+            <p>No repositories found. Use the search box above to find repositories or click "My Repos" to load your repositories.</p>
+        </div>
+    }
+}
+
+@code {
+    private List<GitHubRepository> repositories = new();
+    private string searchQuery = string.Empty;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService.IsAuthenticated)
+        {
+            GitHubService.SetAuthentication(AuthService.CurrentToken!);
+            await LoadMyRepositories();
+        }
+    }
+
+    private async Task SearchRepositories()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery)) return;
+
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var results = await GitHubService.SearchRepositoriesAsync(searchQuery);
+            repositories = results.ToList();
+        }
+        catch (Exception ex)
+        {
+            // Handle error - could add toast notification here
+            Console.WriteLine($"Error searching repositories: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadMyRepositories()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var results = await GitHubService.GetRepositoriesAsync();
+            repositories = results.ToList();
+        }
+        catch (Exception ex)
+        {
+            // Handle error - could add toast notification here
+            Console.WriteLine($"Error loading repositories: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnSearchKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchRepositories();
+        }
+    }
+
+    private void AddToWatchlist(GitHubRepository repository)
+    {
+        RepositoryService.AddRepository(repository);
+        StateHasChanged();
+    }
+
+    private void RemoveFromWatchlist(GitHubRepository repository)
+    {
+        RepositoryService.RemoveRepository(repository.Id);
+        StateHasChanged();
+    }
+}

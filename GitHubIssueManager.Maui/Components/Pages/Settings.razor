@@ -1,0 +1,95 @@
+@page "/settings"
+@using GitHubIssueManager.Maui.Services
+@inject AuthenticationService AuthService
+@rendermode InteractiveServer
+
+<PageTitle>Settings</PageTitle>
+
+<h1>Settings</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>GitHub Authentication</h5>
+            </div>
+            <div class="card-body">
+                @if (AuthService.IsAuthenticated)
+                {
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle"></i> GitHub token is configured and active.
+                    </div>
+                    <button class="btn btn-outline-danger" @onclick="ClearToken">
+                        Clear Token
+                    </button>
+                }
+                else
+                {
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> No GitHub token configured.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="tokenInput" class="form-label">GitHub Personal Access Token</label>
+                        <input type="password" 
+                               class="form-control" 
+                               id="tokenInput" 
+                               @bind="tokenInput" 
+                               placeholder="Enter your GitHub token..." />
+                        <div class="form-text">
+                            Your token will be stored locally and used to authenticate with the GitHub API.
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary" @onclick="SaveToken" disabled="@string.IsNullOrWhiteSpace(tokenInput)">
+                        Save Token
+                    </button>
+                }
+                
+                <hr />
+                
+                <div class="mt-3">
+                    <h6>How to create a GitHub Personal Access Token:</h6>
+                    <ol>
+                        <li>Go to <a href="https://github.com/settings/tokens" target="_blank">GitHub Settings → Developer settings → Personal access tokens</a></li>
+                        <li>Click "Generate new token" → "Generate new token (classic)"</li>
+                        <li>Give it a descriptive name like "GitHub Issue Manager"</li>
+                        <li>Select the following scopes:
+                            <ul>
+                                <li><code>repo</code> - Full control of private repositories</li>
+                                <li><code>public_repo</code> - Access public repositories</li>
+                                <li><code>user</code> - Read user profile data</li>
+                            </ul>
+                        </li>
+                        <li>Click "Generate token" and copy the token value</li>
+                        <li>Paste the token in the field above and click "Save Token"</li>
+                    </ol>
+                    
+                    <div class="alert alert-info">
+                        <strong>Security Note:</strong> Your token is stored locally on your device and is only used to communicate with the GitHub API. Never share your personal access token with others.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string tokenInput = string.Empty;
+
+    private void SaveToken()
+    {
+        if (!string.IsNullOrWhiteSpace(tokenInput))
+        {
+            AuthService.SetToken(tokenInput);
+            tokenInput = string.Empty;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearToken()
+    {
+        AuthService.ClearToken();
+        StateHasChanged();
+    }
+}

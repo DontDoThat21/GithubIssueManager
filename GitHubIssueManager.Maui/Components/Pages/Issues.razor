@@ -1,0 +1,236 @@
+@page "/issues/{owner}/{repo}"
+@using GitHubIssueManager.Maui.Models
+@using GitHubIssueManager.Maui.Services
+@inject GitHubService GitHubService
+@inject AuthenticationService AuthService
+@rendermode InteractiveServer
+
+<PageTitle>Issues - @Owner/@Repo</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>Issues</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/repositories">Repositories</a></li>
+                <li class="breadcrumb-item active">@Owner/@Repo</li>
+            </ol>
+        </nav>
+    </div>
+    <div>
+        <button class="btn btn-primary" @onclick="() => ShowCreateIssueModal = true">
+            <i class="bi bi-plus-circle"></i> New Issue
+        </button>
+    </div>
+</div>
+
+@if (!AuthService.IsAuthenticated)
+{
+    <div class="alert alert-warning">
+        <h4>Authentication Required</h4>
+        <p>Please configure your GitHub token in the <a href="/settings">Settings</a> page to view issues.</p>
+    </div>
+}
+else if (isLoading)
+{
+    <div class="text-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading issues...</span>
+        </div>
+    </div>
+}
+else if (issues.Any())
+{
+    <div class="row">
+        @foreach (var issue in issues)
+        {
+            <div class="col-12 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h5 class="card-title">
+                                    <a href="@issue.HtmlUrl" target="_blank">#@issue.Number - @issue.Title</a>
+                                    <span class="badge @(issue.State.ToLower() == "open" ? "bg-success" : "bg-danger") ms-2">
+                                        @issue.State
+                                    </span>
+                                </h5>
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    by @issue.User.Login • @issue.CreatedAt.ToString("MMM dd, yyyy")
+                                </h6>
+                                
+                                @if (!string.IsNullOrEmpty(issue.Body))
+                                {
+                                    <p class="card-text">
+                                        @(issue.Body.Length > 200 ? issue.Body.Substring(0, 200) + "..." : issue.Body)
+                                    </p>
+                                }
+                                
+                                <div class="d-flex flex-wrap gap-1 mb-2">
+                                    @foreach (var label in issue.Labels)
+                                    {
+                                        <span class="badge" style="background-color: #@label.Color; color: @GetContrastColor(label.Color)">
+                                            @label.Name
+                                        </span>
+                                    }
+                                </div>
+                                
+                                <div class="row text-muted small">
+                                    <div class="col-auto">
+                                        <i class="bi bi-chat"></i> @issue.Comments comments
+                                    </div>
+                                    @if (issue.Assignees.Any())
+                                    {
+                                        <div class="col-auto">
+                                            <i class="bi bi-person"></i> 
+                                            @string.Join(", ", issue.Assignees.Select(a => a.Login))
+                                        </div>
+                                    }
+                                    @if (issue.Milestone != null)
+                                    {
+                                        <div class="col-auto">
+                                            <i class="bi bi-flag"></i> @issue.Milestone.Title
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <h4>No Issues Found</h4>
+        <p>This repository doesn't have any issues yet.</p>
+        <button class="btn btn-primary" @onclick="() => ShowCreateIssueModal = true">
+            <i class="bi bi-plus-circle"></i> Create First Issue
+        </button>
+    </div>
+}
+
+<!-- Create Issue Modal -->
+@if (ShowCreateIssueModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Issue</h5>
+                    <button type="button" class="btn-close" @onclick="CloseCreateIssueModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input @bind="newIssueTitle" class="form-control" placeholder="Issue title..." />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea @bind="newIssueBody" class="form-control" rows="6" placeholder="Describe the issue..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseCreateIssueModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="CreateIssue" disabled="@(string.IsNullOrWhiteSpace(newIssueTitle) || isCreatingIssue)">
+                        @if (isCreatingIssue)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Create Issue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string Owner { get; set; } = string.Empty;
+    [Parameter] public string Repo { get; set; } = string.Empty;
+
+    private List<GitHubIssue> issues = new();
+    private bool isLoading = false;
+    private bool ShowCreateIssueModal = false;
+    private bool isCreatingIssue = false;
+    private string newIssueTitle = string.Empty;
+    private string newIssueBody = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService.IsAuthenticated)
+        {
+            GitHubService.SetAuthentication(AuthService.CurrentToken!);
+            await LoadIssues();
+        }
+    }
+
+    private async Task LoadIssues()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await GitHubService.GetIssuesAsync(Owner, Repo);
+            issues = result.ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading issues: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CreateIssue()
+    {
+        if (string.IsNullOrWhiteSpace(newIssueTitle)) return;
+
+        isCreatingIssue = true;
+        StateHasChanged();
+
+        try
+        {
+            var newIssue = await GitHubService.CreateIssueAsync(Owner, Repo, newIssueTitle, newIssueBody);
+            issues.Insert(0, newIssue);
+            CloseCreateIssueModal();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating issue: {ex.Message}");
+        }
+        finally
+        {
+            isCreatingIssue = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseCreateIssueModal()
+    {
+        ShowCreateIssueModal = false;
+        newIssueTitle = string.Empty;
+        newIssueBody = string.Empty;
+        StateHasChanged();
+    }
+
+    private static string GetContrastColor(string hexColor)
+    {
+        // Simple contrast calculation - could be improved
+        if (hexColor.Length != 6) return "white";
+        
+        var r = Convert.ToInt32(hexColor.Substring(0, 2), 16);
+        var g = Convert.ToInt32(hexColor.Substring(2, 2), 16);
+        var b = Convert.ToInt32(hexColor.Substring(4, 2), 16);
+        var brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+        
+        return brightness > 155 ? "black" : "white";
+    }
+}
