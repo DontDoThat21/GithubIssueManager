@@ -6,6 +6,7 @@ namespace GitHubIssueManager.Maui.Services;
 public class RepositoryService
 {
     private readonly List<GitHubRepository> _watchedRepositories = new();
+    private readonly object _lock = new();
     private readonly ILogger<RepositoryService> _logger;
     private readonly string _dataPath;
 
