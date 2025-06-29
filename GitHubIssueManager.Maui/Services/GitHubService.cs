@@ -92,6 +92,65 @@ public class GitHubService
         }
     }
 
+    public async Task<GitHubIssue> AssignIssueAsync(string owner, string repo, int issueNumber, IEnumerable<string> assignees)
+    {
+        try
+        {
+            var issueUpdate = new IssueUpdate();
+            issueUpdate.Assignees.Clear();
+            foreach (var assignee in assignees)
+            {
+                issueUpdate.Assignees.Add(assignee);
+            }
+            
+            var issue = await _client.Issue.Update(owner, repo, issueNumber, issueUpdate);
+            return MapToGitHubIssue(issue);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error assigning issue #{IssueNumber} in {Owner}/{Repo}", issueNumber, owner, repo);
+            throw;
+        }
+    }
+
+    public async Task<IEnumerable<GitHubUser>> GetAvailableAssigneesAsync(string owner, string repo)
+    {
+        try
+        {
+            var assignees = await _client.Issue.Assignee.GetAllForRepository(owner, repo);
+            return assignees.Select(a => new GitHubUser
+            {
+                Id = a.Id,
+                Login = a.Login,
+                AvatarUrl = a.AvatarUrl ?? string.Empty,
+                HtmlUrl = a.HtmlUrl ?? string.Empty,
+                Type = a.Type.ToString()
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching available assignees for {Owner}/{Repo}", owner, repo);
+            throw;
+        }
+    }
+
+    public async Task<bool> HasAgentAssignmentAsync(string owner, string repo, int issueNumber, IEnumerable<string> agentLogins)
+    {
+        try
+        {
+            var issue = await _client.Issue.Get(owner, repo, issueNumber);
+            
+            if (issue == null) return false;
+            
+            return issue.Assignees.Any(a => agentLogins.Contains(a.Login, StringComparer.OrdinalIgnoreCase));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking agent assignment for issue #{IssueNumber} in {Owner}/{Repo}", issueNumber, owner, repo);
+            return false;
+        }
+    }
+
     private static GitHubRepository MapToGitHubRepository(Repository repo)
     {
         return new GitHubRepository

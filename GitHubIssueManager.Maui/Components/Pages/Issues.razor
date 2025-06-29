@@ -95,6 +95,11 @@ else if (issues.Any())
                                     }
                                 </div>
                             </div>
+                            <div class="ms-3">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => ShowAssignModal(issue)">
+                                    <i class="bi bi-person-plus"></i> Assign
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -148,6 +153,88 @@ else
     </div>
 }
 
+<!-- Assign Issue Modal -->
+@if (ShowAssignIssueModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Assign Issue #@selectedIssue?.Number</h5>
+                    <button type="button" class="btn-close" @onclick="CloseAssignModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (agentAssignmentWarning != null)
+                    {
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> @agentAssignmentWarning
+                        </div>
+                    }
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Available Assignees</label>
+                        @if (isLoadingAssignees)
+                        {
+                            <div class="text-center">
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Loading assignees...</span>
+                                </div>
+                            </div>
+                        }
+                        else if (availableAssignees.Any())
+                        {
+                            <div class="form-check-group">
+                                @foreach (var assignee in availableAssignees)
+                                {
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               @bind="@selectedAssignees[assignee.Login]" 
+                                               id="assignee-@assignee.Login">
+                                        <label class="form-check-label" for="assignee-@assignee.Login">
+                                            <img src="@assignee.AvatarUrl" alt="@assignee.Login" class="rounded-circle me-2" width="20" height="20">
+                                            @assignee.Login
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted">No assignees available.</p>
+                        }
+                    </div>
+                    
+                    @if (selectedIssue?.Assignees.Any() == true)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Currently Assigned</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var assignee in selectedIssue.Assignees)
+                                {
+                                    <span class="badge bg-secondary">
+                                        <img src="@assignee.AvatarUrl" alt="@assignee.Login" class="rounded-circle me-1" width="16" height="16">
+                                        @assignee.Login
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseAssignModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="AssignIssue" disabled="@isAssigningIssue">
+                        @if (isAssigningIssue)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Update Assignment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter] public string Owner { get; set; } = string.Empty;
     [Parameter] public string Repo { get; set; } = string.Empty;
@@ -158,6 +245,16 @@ else
     private bool isCreatingIssue = false;
     private string newIssueTitle = string.Empty;
     private string newIssueBody = string.Empty;
+
+    // Assignment-related fields
+    private bool ShowAssignIssueModal = false;
+    private bool isLoadingAssignees = false;
+    private bool isAssigningIssue = false;
+    private GitHubIssue? selectedIssue = null;
+    private List<GitHubUser> availableAssignees = new();
+    private Dictionary<string, bool> selectedAssignees = new();
+    private string? agentAssignmentWarning = null;
+    private readonly string[] agentLogins = { "copilot", "swe-copilot-agent", "github-copilot", "copilot-agent" };
 
     protected override async Task OnInitializedAsync()
     {
@@ -232,5 +329,94 @@ else
         var brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
         
         return brightness > 155 ? "black" : "white";
+    }
+
+    private async Task ShowAssignModal(GitHubIssue issue)
+    {
+        selectedIssue = issue;
+        ShowAssignIssueModal = true;
+        agentAssignmentWarning = null;
+        selectedAssignees.Clear();
+        
+        // Check for agent assignments
+        var hasAgentAssignment = await GitHubService.HasAgentAssignmentAsync(Owner, Repo, issue.Number, agentLogins);
+        if (hasAgentAssignment)
+        {
+            agentAssignmentWarning = "This issue is currently assigned to an agent. Assigning additional users may interfere with automated processes.";
+        }
+        
+        await LoadAvailableAssignees();
+        StateHasChanged();
+    }
+
+    private async Task LoadAvailableAssignees()
+    {
+        isLoadingAssignees = true;
+        StateHasChanged();
+
+        try
+        {
+            var assignees = await GitHubService.GetAvailableAssigneesAsync(Owner, Repo);
+            availableAssignees = assignees.ToList();
+            
+            // Initialize selection state based on current assignments
+            selectedAssignees.Clear();
+            foreach (var assignee in availableAssignees)
+            {
+                selectedAssignees[assignee.Login] = selectedIssue?.Assignees.Any(a => a.Login == assignee.Login) ?? false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading assignees: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingAssignees = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task AssignIssue()
+    {
+        if (selectedIssue == null) return;
+
+        var selectedUserLogins = selectedAssignees.Where(kvp => kvp.Value).Select(kvp => kvp.Key).ToList();
+
+        isAssigningIssue = true;
+        StateHasChanged();
+
+        try
+        {
+            var updatedIssue = await GitHubService.AssignIssueAsync(Owner, Repo, selectedIssue.Number, selectedUserLogins);
+            
+            // Update the issue in the list
+            var index = issues.FindIndex(i => i.Number == selectedIssue.Number);
+            if (index >= 0)
+            {
+                issues[index] = updatedIssue;
+            }
+            
+            CloseAssignModal();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error assigning issue: {ex.Message}");
+        }
+        finally
+        {
+            isAssigningIssue = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseAssignModal()
+    {
+        ShowAssignIssueModal = false;
+        selectedIssue = null;
+        availableAssignees.Clear();
+        selectedAssignees.Clear();
+        agentAssignmentWarning = null;
+        StateHasChanged();
     }
 }
