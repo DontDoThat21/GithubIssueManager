@@ -1,0 +1,165 @@
+﻿@page "/"
+@using GitHubIssueManager.Maui.Services
+@inject AuthenticationService AuthService
+@inject RepositoryService RepositoryService
+
+<PageTitle>GitHub Issue Manager</PageTitle>
+
+<div class="mb-4">
+    <h1>GitHub Issue Manager</h1>
+    <p class="lead">Manage GitHub issues across multiple repositories with ease.</p>
+</div>
+
+@if (!AuthService.IsAuthenticated)
+{
+    <div class="row">
+        <div class="col-md-8">
+            <div class="alert alert-primary">
+                <h4>Welcome to GitHub Issue Manager!</h4>
+                <p>This application helps you manage GitHub issues across multiple repositories. To get started:</p>
+                <ol>
+                    <li>Configure your GitHub Personal Access Token in <a href="/settings" class="alert-link">Settings</a></li>
+                    <li>Browse and add repositories to your watchlist</li>
+                    <li>View and manage issues across all your watched repositories</li>
+                </ol>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5>Features</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-github"></i> Repository Management</h6>
+                            <ul>
+                                <li>Browse and search GitHub repositories</li>
+                                <li>Add repositories to your watchlist</li>
+                                <li>View repository metadata and statistics</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-bug"></i> Issue Management</h6>
+                            <ul>
+                                <li>View all issues across watched repositories</li>
+                                <li>Create new issues</li>
+                                <li>Update existing issues</li>
+                                <li>Filter and search issues</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Quick Start</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="/settings" class="btn btn-primary">
+                            <i class="bi bi-gear"></i> Configure GitHub Token
+                        </a>
+                        <a href="/repositories" class="btn btn-outline-secondary">
+                            <i class="bi bi-collection"></i> Browse Repositories
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Watched Repositories</h5>
+                </div>
+                <div class="card-body">
+                    @{
+                        var watchedRepos = RepositoryService.GetWatchedRepositories().ToList();
+                    }
+                    @if (watchedRepos.Any())
+                    {
+                        <div class="row">
+                            @foreach (var repo in watchedRepos.Take(6))
+                            {
+                                <div class="col-md-6 mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="card-title">
+                                                <a href="@repo.HtmlUrl" target="_blank">@repo.FullName</a>
+                                            </h6>
+                                            <p class="card-text text-muted small">@repo.Description</p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-exclamation-circle"></i> @repo.OpenIssuesCount issues
+                                                </small>
+                                                <a href="/issues/@repo.Owner.Login/@repo.Name" class="btn btn-sm btn-outline-primary">
+                                                    View Issues
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <a href="/repositories" class="btn btn-outline-primary">
+                                View All Repositories
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center">
+                            <p class="text-muted">No repositories in your watchlist yet.</p>
+                            <a href="/repositories" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Add Repositories
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="/repositories" class="btn btn-outline-primary">
+                            <i class="bi bi-collection"></i> Browse Repositories
+                        </a>
+                        <a href="/settings" class="btn btn-outline-secondary">
+                            <i class="bi bi-gear"></i> Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5>Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col">
+                            <h4>@RepositoryService.GetWatchedRepositories().Count()</h4>
+                            <small class="text-muted">Watched Repos</small>
+                        </div>
+                        <div class="col">
+                            <h4>@RepositoryService.GetWatchedRepositories().Sum(r => r.OpenIssuesCount)</h4>
+                            <small class="text-muted">Open Issues</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
