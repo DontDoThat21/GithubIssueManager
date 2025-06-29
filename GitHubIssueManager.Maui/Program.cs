@@ -34,7 +34,7 @@ else
 var jwtSettings = builder.Configuration.GetSection("Authentication:Jwt");
 var key = Encoding.ASCII.GetBytes(jwtSettings["Key"] ?? "your-secret-key-here-must-be-at-least-32-characters-long");
 
-builder.Services.AddAuthentication()
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer("ApiJwt", options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
