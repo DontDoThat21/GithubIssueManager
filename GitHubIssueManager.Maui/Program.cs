@@ -14,11 +14,17 @@ builder.Services.AddRazorComponents()
 // Add controllers for API endpoints
 builder.Services.AddControllers();
 
-// Add Microsoft Authentication (optional - for future Azure AD integration)
-// Only configure if ClientId is provided in configuration
+// 🆓 FREE Authentication Setup - No external services required!
+// 
+// This section configures authentication. Currently set up for FREE local JWT authentication.
+// Azure AD integration is optional and only activates if ClientId is configured.
+
+// Check for optional Azure AD configuration (enterprise feature)
 var azureAdSection = builder.Configuration.GetSection("AzureAd");
 if (!string.IsNullOrEmpty(azureAdSection["ClientId"]))
 {
+    // Azure AD mode (optional - only if ClientId is configured)
+    // Note: This requires Azure AD setup but has free tier available
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddMicrosoftIdentityWebApi(azureAdSection)
         .EnableTokenAcquisitionToCallDownstreamApi()
@@ -26,11 +32,13 @@ if (!string.IsNullOrEmpty(azureAdSection["ClientId"]))
 }
 else
 {
-    // Configure basic JWT authentication for MCP server
+    // 🎉 FREE Local Authentication Mode (Current Setup)
+    // No external dependencies, no subscriptions required!
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme);
 }
 
-// Add JWT Bearer authentication for API endpoints
+// 🔐 Local JWT Bearer Authentication (FREE)
+// This handles token generation and validation completely locally
 var jwtSettings = builder.Configuration.GetSection("Authentication:Jwt");
 var key = Encoding.ASCII.GetBytes(jwtSettings["Key"] ?? "your-secret-key-here-must-be-at-least-32-characters-long");
 
