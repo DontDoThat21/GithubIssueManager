@@ -53,7 +53,12 @@ public class AuthenticationService
     public string GenerateJwtToken(string userId, string email, IEnumerable<string>? roles = null)
     {
         var jwtSettings = _configuration.GetSection("Authentication:Jwt");
-        var key = Encoding.ASCII.GetBytes(jwtSettings["Key"] ?? "your-secret-key-here-must-be-at-least-32-characters-long");
+        var secretKey = jwtSettings["Key"];
+        if (string.IsNullOrEmpty(secretKey) || secretKey.Length < 32)
+        {
+            throw new InvalidOperationException("JWT secret key is missing or invalid. Ensure it is configured securely and is at least 32 characters long.");
+        }
+        var key = Encoding.ASCII.GetBytes(secretKey);
         var tokenHandler = new JwtSecurityTokenHandler();
 
         var claims = new List<Claim>
