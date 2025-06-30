@@ -182,6 +182,7 @@ public class GitHubService
     {
         return new GitHubIssue
         {
+            Id = issue.Id,
             Number = issue.Number,
             Title = issue.Title,
             Body = issue.Body ?? string.Empty,

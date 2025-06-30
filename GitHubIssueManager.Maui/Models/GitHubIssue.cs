@@ -2,6 +2,7 @@ namespace GitHubIssueManager.Maui.Models;
 
 public class GitHubIssue
 {
+    public long Id { get; set; }
     public int Number { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Body { get; set; } = string.Empty;
