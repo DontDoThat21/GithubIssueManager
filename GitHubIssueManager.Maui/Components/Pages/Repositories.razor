@@ -55,7 +55,7 @@ else
                     <div class="card h-100">
                         <div class="card-body">
                             <h5 class="card-title">
-                                <a href="@repo.HtmlUrl" target="_blank">@repo.Name</a>
+                                <a href="/issues/@repo.Owner.Login/@repo.Name">@repo.Name</a>
                                 @if (repo.Private)
                                 {
                                     <span class="badge bg-secondary ms-1">Private</span>
