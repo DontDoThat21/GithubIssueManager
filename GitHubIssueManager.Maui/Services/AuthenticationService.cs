@@ -13,6 +13,7 @@ public class AuthenticationService
     private readonly string _dataPath;
     private string? _currentToken;
     private string? _currentJwtToken;
+    private readonly string SecretKey;
 
     public AuthenticationService(ILogger<AuthenticationService> logger, IWebHostEnvironment environment, IConfiguration configuration)
     {
