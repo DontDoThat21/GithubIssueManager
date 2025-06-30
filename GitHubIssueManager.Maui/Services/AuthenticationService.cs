@@ -53,7 +53,7 @@ public class AuthenticationService
     public string GenerateJwtToken(string userId, string email, IEnumerable<string>? roles = null)
     {
         var jwtSettings = _configuration.GetSection("Authentication:Jwt");
-        var key = Encoding.ASCII.GetBytes(jwtSettings["Key"] ?? FallbackSecretKey);
+        var key = Encoding.ASCII.GetBytes(jwtSettings["Key"]);
         var tokenHandler = new JwtSecurityTokenHandler();
 
         var claims = new List<Claim>
