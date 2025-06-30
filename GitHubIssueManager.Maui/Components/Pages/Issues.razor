@@ -25,14 +25,7 @@
     </div>
 </div>
 
-@if (!AuthService.IsAuthenticated)
-{
-    <div class="alert alert-warning">
-        <h4>Authentication Required</h4>
-        <p>Please configure your GitHub token in the <a href="/settings">Settings</a> page to view issues.</p>
-    </div>
-}
-else if (isLoading)
+@if (isLoading)
 {
     <div class="text-center">
         <div class="spinner-border" role="status">
@@ -107,14 +100,28 @@ else if (issues.Any())
         }
     </div>
 }
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-warning">
+        <h4>Error Loading Issues</h4>
+        <p>@errorMessage</p>
+        @if (errorMessage.Contains("Authentication"))
+        {
+            <a href="/settings" class="btn btn-primary">Go to Settings</a>
+        }
+    </div>
+}
 else
 {
     <div class="alert alert-info">
         <h4>No Issues Found</h4>
         <p>This repository doesn't have any issues yet.</p>
-        <button class="btn btn-primary" @onclick="() => ShowCreateIssueModal = true">
-            <i class="bi bi-plus-circle"></i> Create First Issue
-        </button>
+        @if (AuthService.IsAuthenticated)
+        {
+            <button class="btn btn-primary" @onclick="() => ShowCreateIssueModal = true">
+                <i class="bi bi-plus-circle"></i> Create First Issue
+            </button>
+        }
     </div>
 }
 
@@ -241,6 +248,7 @@ else
 
     private List<GitHubIssue> issues = new();
     private bool isLoading = false;
+    private string? errorMessage = null;
     private bool ShowCreateIssueModal = false;
     private bool isCreatingIssue = false;
     private string newIssueTitle = string.Empty;
@@ -261,6 +269,18 @@ else
         if (AuthService.IsAuthenticated)
         {
             GitHubService.SetAuthentication(AuthService.CurrentToken!);
+        }
+        await LoadIssues();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (AuthService.IsAuthenticated)
+        {
+            GitHubService.SetAuthentication(AuthService.CurrentToken!);
+        }
+        if (!string.IsNullOrEmpty(Owner) && !string.IsNullOrEmpty(Repo))
+        {
             await LoadIssues();
         }
     }
@@ -268,6 +288,7 @@ else
     private async Task LoadIssues()
     {
         isLoading = true;
+        errorMessage = null;
         StateHasChanged();
 
         try
@@ -277,7 +298,21 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading issues: {ex.Message}");
+            issues = new List<GitHubIssue>();
+            
+            // Check if this is an authentication error
+            if (ex.Message.Contains("401") || ex.Message.Contains("Unauthorized"))
+            {
+                errorMessage = "Authentication required to view issues from this repository. Please configure your GitHub token in the Settings page.";
+            }
+            else if (ex.Message.Contains("404") || ex.Message.Contains("Not Found"))
+            {
+                errorMessage = "Repository not found. Please check the repository name and try again.";
+            }
+            else
+            {
+                errorMessage = $"Error loading issues: {ex.Message}";
+            }
         }
         finally
         {
