@@ -77,12 +77,12 @@ public class GitHubService
         }
     }
 
-    public async Task<GitHubIssue> UpdateIssueAsync(string owner, string repo, int issueNumber, string title, string body)
+    public async Task<GitHubIssue> UpdateIssueAsync(string owner, string repo, long issueNumber, string title, string body)
     {
         try
         {
             var issueUpdate = new IssueUpdate { Title = title, Body = body };
-            var issue = await _client.Issue.Update(owner, repo, issueNumber, issueUpdate);
+            var issue = await _client.Issue.Update(owner, repo, (int)issueNumber, issueUpdate);
             return MapToGitHubIssue(issue);
         }
         catch (Exception ex)
@@ -92,7 +92,7 @@ public class GitHubService
         }
     }
 
-    public async Task<GitHubIssue> AssignIssueAsync(string owner, string repo, int issueNumber, IEnumerable<string> assignees)
+    public async Task<GitHubIssue> AssignIssueAsync(string owner, string repo, long issueNumber, IEnumerable<string> assignees)
     {
         try
         {
@@ -103,7 +103,7 @@ public class GitHubService
                 issueUpdate.Assignees.Add(assignee);
             }
             
-            var issue = await _client.Issue.Update(owner, repo, issueNumber, issueUpdate);
+            var issue = await _client.Issue.Update(owner, repo, (int)issueNumber, issueUpdate);
             return MapToGitHubIssue(issue);
         }
         catch (Exception ex)
@@ -134,11 +134,11 @@ public class GitHubService
         }
     }
 
-    public async Task<bool> HasAgentAssignmentAsync(string owner, string repo, int issueNumber, IEnumerable<string> agentLogins)
+    public async Task<bool> HasAgentAssignmentAsync(string owner, string repo, long issueNumber, IEnumerable<string> agentLogins)
     {
         try
         {
-            var issue = await _client.Issue.Get(owner, repo, issueNumber);
+            var issue = await _client.Issue.Get(owner, repo, (int)issueNumber);
             
             if (issue == null) return false;
             

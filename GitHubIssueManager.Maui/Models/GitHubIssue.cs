@@ -15,5 +15,5 @@ public class GitHubIssue
     public List<GitHubUser> Assignees { get; set; } = new();
     public List<GitHubLabel> Labels { get; set; } = new();
     public GitHubMilestone? Milestone { get; set; }
-    public int Comments { get; set; }
+    public long Comments { get; set; }
 }
