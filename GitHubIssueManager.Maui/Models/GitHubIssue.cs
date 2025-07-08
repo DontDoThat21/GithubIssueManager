@@ -2,7 +2,7 @@ namespace GitHubIssueManager.Maui.Models;
 
 public class GitHubIssue
 {
-    public int Number { get; set; }
+    public long Number { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Body { get; set; } = string.Empty;
     public string State { get; set; } = string.Empty;
@@ -14,5 +14,5 @@ public class GitHubIssue
     public List<GitHubUser> Assignees { get; set; } = new();
     public List<GitHubLabel> Labels { get; set; } = new();
     public GitHubMilestone? Milestone { get; set; }
-    public int Comments { get; set; }
+    public long Comments { get; set; }
 }
