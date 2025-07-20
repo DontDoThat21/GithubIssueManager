@@ -1,23 +1,62 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
+<div class="material-layout">
+    <div class="material-drawer" id="drawer">
         <NavMenu />
     </div>
+    <div class="material-drawer-scrim" id="drawer-scrim" onclick="toggleDrawer()"></div>
+    
+    <div class="material-app-content">
+        <header class="material-top-bar">
+            <div class="material-top-bar__row">
+                <button class="material-icon-button" onclick="toggleDrawer()">
+                    <span class="material-icons">menu</span>
+                </button>
+                <h1 class="material-top-bar__title">GitHub Issue Manager</h1>
+                <div class="material-top-bar__actions">
+                    <a href="https://learn.microsoft.com/aspnet/core/" target="_blank" class="btn btn-outline-secondary">
+                        About
+                    </a>
+                </div>
+            </div>
+        </header>
+        
+        <main class="material-main-content">
+            <div class="material-content-container">
+                @Body
+            </div>
+        </main>
+    </div>
+</div>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+<div id="error-snackbar" class="material-snackbar" style="display: none;">
+    <div class="material-snackbar__surface">
+        <div class="material-snackbar__label">
+            An unhandled error has occurred.
         </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
+        <div class="material-snackbar__actions">
+            <button type="button" class="btn btn-primary" onclick="location.reload()">
+                Reload
+            </button>
+            <button class="material-icon-button" onclick="document.getElementById('error-snackbar').style.display = 'none';" title="Dismiss">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+    </div>
 </div>
 
-<div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
-</div>
+<script>
+    function toggleDrawer() {
+        const drawer = document.getElementById('drawer');
+        const scrim = document.getElementById('drawer-scrim');
+        const isOpen = drawer.classList.contains('material-drawer--open');
+        
+        if (isOpen) {
+            drawer.classList.remove('material-drawer--open');
+            scrim.classList.remove('material-drawer-scrim--open');
+        } else {
+            drawer.classList.add('material-drawer--open');
+            scrim.classList.add('material-drawer-scrim--open');
+        }
+    }
+</script>

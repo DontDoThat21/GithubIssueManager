@@ -1,30 +1,23 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">GitHub Issue Manager</a>
-    </div>
+﻿<div class="material-nav-header">
+    <h3 class="material-nav-title">Navigation</h3>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="repositories">
-                <span class="bi bi-collection-fill" aria-hidden="true"></span> Repositories
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="settings">
-                <span class="bi bi-gear-fill" aria-hidden="true"></span> Settings
-            </NavLink>
-        </div>
+<div class="material-nav-content">
+    <nav class="material-nav-list">
+        <NavLink class="material-nav-item material-nav-item--active" href="" Match="NavLinkMatch.All">
+            <span class="material-icons material-nav-icon">home</span>
+            <span class="material-nav-text">Home</span>
+        </NavLink>
+        
+        <NavLink class="material-nav-item" href="repositories">
+            <span class="material-icons material-nav-icon">folder</span>
+            <span class="material-nav-text">Repositories</span>
+        </NavLink>
+        
+        <NavLink class="material-nav-item" href="settings">
+            <span class="material-icons material-nav-icon">settings</span>
+            <span class="material-nav-text">Settings</span>
+        </NavLink>
     </nav>
 </div>
 

@@ -31,7 +31,7 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6><i class="bi bi-github"></i> Repository Management</h6>
+                            <h6><i class="material-icons" style="vertical-align: middle; margin-right: 8px;">folder</i> Repository Management</h6>
                             <ul>
                                 <li>Browse and search GitHub repositories</li>
                                 <li>Add repositories to your watchlist</li>
@@ -39,7 +39,7 @@
                             </ul>
                         </div>
                         <div class="col-md-6">
-                            <h6><i class="bi bi-bug"></i> Issue Management</h6>
+                            <h6><i class="material-icons" style="vertical-align: middle; margin-right: 8px;">bug_report</i> Issue Management</h6>
                             <ul>
                                 <li>View all issues across watched repositories</li>
                                 <li>Create new issues</li>
@@ -59,10 +59,10 @@
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         <a href="/settings" class="btn btn-primary">
-                            <i class="bi bi-gear"></i> Configure GitHub Token
+                            <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">settings</i> Configure GitHub Token
                         </a>
                         <a href="/repositories" class="btn btn-outline-secondary">
-                            <i class="bi bi-collection"></i> Browse Repositories
+                            <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">folder</i> Browse Repositories
                         </a>
                     </div>
                 </div>
@@ -96,7 +96,7 @@ else
                                             <p class="card-text text-muted small">@repo.Description</p>
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <small class="text-muted">
-                                                    <i class="bi bi-exclamation-circle"></i> @repo.OpenIssuesCount issues
+                                                    <i class="material-icons" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">error_outline</i> @repo.OpenIssuesCount issues
                                                 </small>
                                                 <a href="/issues/@repo.Owner.Login/@repo.Name" class="btn btn-sm btn-outline-primary">
                                                     View Issues
@@ -119,7 +119,7 @@ else
                         <div class="text-center">
                             <p class="text-muted">No repositories in your watchlist yet.</p>
                             <a href="/repositories" class="btn btn-primary">
-                                <i class="bi bi-plus-circle"></i> Add Repositories
+                                <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">add_circle</i> Add Repositories
                             </a>
                         </div>
                     }
@@ -134,10 +134,10 @@ else
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         <a href="/repositories" class="btn btn-outline-primary">
-                            <i class="bi bi-collection"></i> Browse Repositories
+                            <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">folder</i> Browse Repositories
                         </a>
                         <a href="/settings" class="btn btn-outline-secondary">
-                            <i class="bi bi-gear"></i> Settings
+                            <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">settings</i> Settings
                         </a>
                     </div>
                 </div>

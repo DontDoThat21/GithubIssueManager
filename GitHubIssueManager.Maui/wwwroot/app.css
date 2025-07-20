@@ -1,23 +1,214 @@
+/* Material Design Theme */
+:root {
+    --mdc-theme-primary: #6200ee;
+    --mdc-theme-primary-variant: #3700b3;
+    --mdc-theme-secondary: #03dac6;
+    --mdc-theme-background: #fafafa;
+    --mdc-theme-surface: #ffffff;
+    --mdc-theme-error: #b00020;
+    --mdc-theme-on-primary: #ffffff;
+    --mdc-theme-on-secondary: #000000;
+    --mdc-theme-on-background: #000000;
+    --mdc-theme-on-surface: rgba(0, 0, 0, 0.87);
+    --mdc-theme-on-error: #ffffff;
+    --mdc-theme-text-primary-on-background: rgba(0, 0, 0, 0.87);
+    --mdc-theme-text-secondary-on-background: rgba(0, 0, 0, 0.6);
+    --mdc-theme-text-hint-on-background: rgba(0, 0, 0, 0.38);
+    --mdc-theme-text-disabled-on-background: rgba(0, 0, 0, 0.38);
+}
+
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--mdc-theme-background);
+    color: var(--mdc-theme-on-background);
+    line-height: 1.5;
 }
 
-a, .btn-link {
-    color: #006bb7;
+/* Material Design Typography Scale */
+h1 {
+    font-size: 2rem;
+    font-weight: 300;
+    line-height: 1.167;
+    margin: 0.67em 0;
 }
 
+h2 {
+    font-size: 1.75rem;
+    font-weight: 400;
+    line-height: 1.2;
+    margin: 0.83em 0;
+}
+
+h3 {
+    font-size: 1.5rem;
+    font-weight: 400;
+    line-height: 1.334;
+    margin: 1em 0;
+}
+
+h4 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    line-height: 1.6;
+    margin: 1.33em 0;
+}
+
+h5 {
+    font-size: 1.125rem;
+    font-weight: 500;
+    line-height: 1.6;
+    margin: 1.67em 0;
+}
+
+h6 {
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.6;
+    margin: 2.33em 0;
+}
+
+p {
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    margin: 1em 0;
+}
+
+.lead {
+    font-size: 1.25rem;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--mdc-theme-text-secondary-on-background);
+}
+
+/* Material Design Cards */
+.mdc-card {
+    background-color: var(--mdc-theme-surface);
+    border-radius: 8px;
+    box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),
+                0px 1px 1px 0px rgba(0,0,0,0.14),
+                0px 1px 3px 0px rgba(0,0,0,0.12);
+    margin: 16px 0;
+    padding: 16px;
+    transition: box-shadow 0.15s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.mdc-card:hover {
+    box-shadow: 0px 3px 3px -2px rgba(0,0,0,0.2),
+                0px 3px 4px 0px rgba(0,0,0,0.14),
+                0px 1px 8px 0px rgba(0,0,0,0.12);
+}
+
+.mdc-card--outlined {
+    box-shadow: none;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+/* Bootstrap card override for Material Design */
+.card {
+    background-color: var(--mdc-theme-surface);
+    border-radius: 8px;
+    box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),
+                0px 1px 1px 0px rgba(0,0,0,0.14),
+                0px 1px 3px 0px rgba(0,0,0,0.12);
+    border: none;
+    transition: box-shadow 0.15s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.card:hover {
+    box-shadow: 0px 3px 3px -2px rgba(0,0,0,0.2),
+                0px 3px 4px 0px rgba(0,0,0,0.14),
+                0px 1px 8px 0px rgba(0,0,0,0.12);
+}
+
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    font-weight: 500;
+    color: var(--mdc-theme-on-surface);
+}
+
+/* Material Design Buttons */
 .btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    background-color: var(--mdc-theme-primary);
+    border-color: var(--mdc-theme-primary);
+    color: var(--mdc-theme-on-primary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.0892857143em;
+    border-radius: 4px;
+    padding: 8px 16px;
+    transition: background-color 0.15s cubic-bezier(0.4, 0.0, 0.2, 1),
+                box-shadow 0.15s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+.btn-primary:hover {
+    background-color: #7c4dff;
+    border-color: #7c4dff;
+    box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2),
+                0px 4px 5px 0px rgba(0,0,0,0.14),
+                0px 1px 10px 0px rgba(0,0,0,0.12);
 }
 
-.content {
-    padding-top: 1.1rem;
+.btn-outline-primary {
+    color: var(--mdc-theme-primary);
+    border-color: var(--mdc-theme-primary);
+    background-color: transparent;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.0892857143em;
+}
+
+.btn-outline-primary:hover {
+    background-color: rgba(98, 0, 238, 0.12);
+    color: var(--mdc-theme-primary);
+    border-color: var(--mdc-theme-primary);
+}
+
+.btn-outline-secondary {
+    color: rgba(0, 0, 0, 0.87);
+    border-color: rgba(0, 0, 0, 0.12);
+    background-color: transparent;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.0892857143em;
+}
+
+.btn-outline-secondary:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+    color: rgba(0, 0, 0, 0.87);
+    border-color: rgba(0, 0, 0, 0.23);
+}
+
+/* Material Design Alerts */
+.alert {
+    border-radius: 8px;
+    border: none;
+    padding: 16px;
+    box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),
+                0px 1px 1px 0px rgba(0,0,0,0.14),
+                0px 1px 3px 0px rgba(0,0,0,0.12);
+}
+
+.alert-primary {
+    background-color: rgba(98, 0, 238, 0.12);
+    color: #3700b3;
+}
+
+.alert-link {
+    color: var(--mdc-theme-primary);
+    font-weight: 500;
+}
+
+/* Focus styles */
+.btn:focus, 
+.btn:active:focus, 
+.btn-link.nav-link:focus, 
+.form-control:focus, 
+.form-check-input:focus {
+    box-shadow: 0 0 0 2px rgba(98, 0, 238, 0.2);
 }
 
 h1:focus {
@@ -25,27 +216,56 @@ h1:focus {
 }
 
 .valid.modified:not([type=checkbox]) {
-    outline: 1px solid #26b050;
+    outline: 2px solid #4caf50;
+    outline-offset: 2px;
 }
 
 .invalid {
-    outline: 1px solid #e50000;
+    outline: 2px solid var(--mdc-theme-error);
+    outline-offset: 2px;
 }
 
 .validation-message {
-    color: #e50000;
+    color: var(--mdc-theme-error);
 }
 
+/* Material Design specific adjustments */
+.text-muted {
+    color: var(--mdc-theme-text-secondary-on-background) !important;
+}
+
+.small {
+    font-size: 0.875rem;
+}
+
+/* Links */
+a {
+    color: var(--mdc-theme-primary);
+    text-decoration: none;
+    transition: color 0.15s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+a:hover {
+    color: #7c4dff;
+    text-decoration: underline;
+}
+
+/* Error boundary with Material Design */
 .blazor-error-boundary {
-    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
-    padding: 1rem 1rem 1rem 3.7rem;
-    color: white;
+    background: var(--mdc-theme-error);
+    padding: 16px;
+    color: var(--mdc-theme-on-error);
+    border-radius: 8px;
+    margin: 16px;
+    box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),
+                0px 1px 1px 0px rgba(0,0,0,0.14),
+                0px 1px 3px 0px rgba(0,0,0,0.12);
 }
 
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
+.blazor-error-boundary::after {
+    content: "An error has occurred.";
+}
 
 .darker-border-checkbox.form-check-input {
-    border-color: #929292;
+    border-color: rgba(0, 0, 0, 0.38);
 }
