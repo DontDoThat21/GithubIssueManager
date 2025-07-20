@@ -81,6 +81,11 @@ public class GitHubService
     {
         try
         {
+            if (issueNumber > int.MaxValue)
+            {
+                throw new ArgumentOutOfRangeException(nameof(issueNumber), $"Issue number {issueNumber} is too large to be processed. Maximum supported issue number is {int.MaxValue}.");
+            }
+            
             var issueUpdate = new IssueUpdate { Title = title, Body = body };
             var issue = await _client.Issue.Update(owner, repo, (int)issueNumber, issueUpdate);
             return MapToGitHubIssue(issue);
@@ -96,6 +101,11 @@ public class GitHubService
     {
         try
         {
+            if (issueNumber > int.MaxValue)
+            {
+                throw new ArgumentOutOfRangeException(nameof(issueNumber), $"Issue number {issueNumber} is too large to be processed. Maximum supported issue number is {int.MaxValue}.");
+            }
+            
             var issueUpdate = new IssueUpdate();
             issueUpdate.Assignees.Clear();
             foreach (var assignee in assignees)
@@ -138,6 +148,12 @@ public class GitHubService
     {
         try
         {
+            if (issueNumber > int.MaxValue)
+            {
+                _logger.LogWarning("Issue number {IssueNumber} is too large to check agent assignment. Maximum supported issue number is {MaxValue}.", issueNumber, int.MaxValue);
+                return false;
+            }
+            
             var issue = await _client.Issue.Get(owner, repo, (int)issueNumber);
             
             if (issue == null) return false;
