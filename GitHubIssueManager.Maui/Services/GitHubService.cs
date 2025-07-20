@@ -237,4 +237,12 @@ public class GitHubService
             Comments = issue.Comments
         };
     }
+
+    private static void ValidateIssueNumber(long issueNumber)
+    {
+        if (issueNumber <= 0)
+        {
+            throw new ArgumentException("Issue number must be positive", nameof(issueNumber));
+        }
+    }
 }
