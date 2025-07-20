@@ -98,10 +98,7 @@ public class GitHubService
     {
         try
         {
-            if (issueNumber > int.MaxValue)
-            {
-                throw new ArgumentOutOfRangeException(nameof(issueNumber), $"Issue number {issueNumber} is too large to be processed. Maximum supported issue number is {int.MaxValue}.");
-            }
+            ValidateIssueNumber(issueNumber);
             
             var issueUpdate = new IssueUpdate();
             issueUpdate.Assignees.Clear();
