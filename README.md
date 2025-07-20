@@ -12,7 +12,7 @@ Create a cross-platform GitHub issue management application using .NET 8 with Bl
 - **Repository Management** - browse, search, and manage watchlists
 - **Advanced Issue Management** - view, create, and assign issues with conflict detection
 - **🆕 Agent Assignment Feature** - Assign users to issues with automated agent conflict protection
-- **🆕 FREE Local Authentication** - JWT-based authentication system requiring no external subscriptions
+- **🆕 Local Authentication** - JWT-based authentication system requiring no external subscriptions - consider replacing in your implementations
 - **🆕 MCP Server API Endpoints** - REST API foundation for AI assistant integration
 - **Authentication System** - secure GitHub token management with local JWT tokens
 - **Modern UI** - Bootstrap-based responsive design with enhanced issue management
@@ -35,7 +35,7 @@ The application is fully functional and includes:
 ✅ Enable full CRUD operations on GitHub issues  
 ✅ Support multiple repositories and organizations  
 ✅ Add advanced issue assignment with agent conflict detection
-✅ Implement FREE local authentication system  
+✅ Implement free local authentication system  
 🚧 Complete MCP server capabilities for AI assistant integration (Phase 3)  
 
 ## 🏗️ Technical Architecture
@@ -47,7 +47,7 @@ The application is fully functional and includes:
 - **Authentication**: GitHub Personal Access Tokens + JWT Bearer tokens
 - **MCP Integration**: REST API endpoints with local JWT authentication
 - **Data Storage**: Local JSON persistence with secure token management
-- **Security**: FREE local authentication requiring no external subscriptions
+- **Security**: Free local authentication requiring no external subscriptions
 
 ### Current Project Structure
 ```
@@ -158,7 +158,7 @@ dotnet run
 1. Generate JWT token via `/api/auth/login` endpoint
 2. Use token in Authorization header: `Bearer YOUR_JWT_TOKEN`
 3. Access protected endpoints like `/api/mcp/status`
-4. All authentication is FREE and runs locally!
+4. All authentication is free and runs locally!
 
 ## 📋 Development Phases
 
@@ -170,7 +170,7 @@ dotnet run
 - ✅ Create issue viewing and basic creation
 - ✅ Implement responsive UI with Bootstrap
 - ✅ **Add advanced issue assignment with agent conflict detection**
-- ✅ **Implement FREE local JWT authentication system**
+- ✅ **Implement free local JWT authentication system**
 - ✅ **Build MCP server API foundation with secure endpoints**
 
 ### Phase 2: Core Issue Management 🚧 **NEXT**
@@ -202,7 +202,7 @@ dotnet run
 - ✅ **Agent Protection**: Automatic detection of AI agent accounts
 
 ### MCP Server Architecture
-- ✅ **FREE Local Authentication**: JWT tokens generated and validated locally
+- ✅ **Free Local Authentication**: JWT tokens generated and validated locally
 - ✅ **API Endpoints**: Complete `/api/auth` and `/api/mcp` REST endpoints
 - ✅ **Zero Dependencies**: No external services or subscriptions required
 - ✅ **Security**: Secure token management with configurable expiration
@@ -219,7 +219,7 @@ dotnet run
 
 ### Authentication Endpoints (`/api/auth`) ✅
 ```bash
-# Generate JWT Token (FREE)
+# Generate JWT Token (free)
 POST /api/auth/login
 Content-Type: application/json
 {
@@ -271,7 +271,7 @@ curl -X GET http://localhost:5225/api/mcp/status \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-**All API operations are FREE and require no external services!**
+**All API operations are free and require no external services!**
 
 ## 🧪 Testing & Validation
 
@@ -410,7 +410,7 @@ curl -X GET http://localhost:5225/api/mcp/status \
 ### Comprehensive Documentation Available:
 - **[Application README](GitHubIssueManager.Maui/README.md)**: Detailed setup, architecture, and development guidelines
 - **[Agent Assignment Feature](AGENT_ASSIGNMENT_FEATURE.md)**: Complete guide to the new issue assignment system
-- **[FREE Authentication Guide](FREE_AUTHENTICATION.md)**: JWT authentication setup and API usage  
+- **[Free Authentication Guide](FREE_AUTHENTICATION.md)**: JWT authentication setup and API usage  
 - **API Documentation**: Complete REST API reference (above)
 - **Troubleshooting Guide**: Issue resolution and debugging tips
 
