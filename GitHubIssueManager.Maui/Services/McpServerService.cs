@@ -1,3 +1,5 @@
+using GithubIssueManager.Services;
+
 namespace GitHubIssueManager.Maui.Services;
 
 public class McpServerService
