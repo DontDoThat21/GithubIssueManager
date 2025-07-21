@@ -237,4 +237,17 @@ public class GitHubService
             Comments = issue.Comments
         };
     }
+
+    private void ValidateIssueNumber(long issueNumber)
+    {
+        if (issueNumber <= 0)
+        {
+            throw new ArgumentException("Issue number must be greater than zero.", nameof(issueNumber));
+        }
+
+        if (issueNumber > int.MaxValue)
+        {
+            throw new ArgumentException($"Issue number {issueNumber} is too large. Maximum supported issue number is {int.MaxValue}.", nameof(issueNumber));
+        }
+    }
 }
