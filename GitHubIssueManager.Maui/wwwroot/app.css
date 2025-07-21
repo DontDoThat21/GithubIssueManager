@@ -94,3 +94,38 @@ h1:focus {
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
     }
 }
+
+/* Fix for MCP Repositories View Card sizing - ensure equal heights in each row */
+.mud-grid.repositories-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+    gap: 24px !important;
+    grid-auto-rows: 1fr !important; /* This ensures equal heights */
+}
+
+.mud-grid.repositories-grid .mud-grid-item {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.mud-grid.repositories-grid .mud-grid-item .mud-card {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.mud-grid.repositories-grid .mud-grid-item .mud-card .mud-card-content {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* More specific selectors for MudBlazor components */
+.repositories-grid .mud-grid-item-xs-12.mud-grid-item-md-6.mud-grid-item-lg-4 {
+    display: flex !important;
+}
+
+.repositories-grid .mud-card.h-100.d-flex.flex-column {
+    min-height: 350px !important;
+    height: auto !important;
+}
