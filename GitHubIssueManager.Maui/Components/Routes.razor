@@ -1,4 +1,4 @@
-﻿<MudThemeProvider />
+﻿<MudThemeProvider Theme="CustomTheme" IsDarkMode="true" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -9,3 +9,61 @@
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
 </Router>
+
+@code {
+    private readonly MudTheme CustomTheme = new MudTheme()
+    {
+        PaletteDark = new PaletteDark()
+        {
+            // Black background theme
+            Background = "#121212",
+            Surface = "#1e1e1e",
+            
+            // Gold as primary color
+            Primary = "#FFD700",
+            PrimaryContrastText = "#000000",
+            
+            // Indigo as secondary/accent color
+            Secondary = "#3F51B5",
+            SecondaryContrastText = "#ffffff",
+            
+            // Accent color (indigo variant)
+            Tertiary = "#5C6BC0",
+            TertiaryContrastText = "#ffffff",
+            
+            // Text colors for proper contrast on dark background
+            TextPrimary = "#ffffff",
+            TextSecondary = "#b3b3b3",
+            TextDisabled = "#666666",
+            
+            // App bar and drawer
+            AppbarBackground = "#000000",
+            AppbarText = "#ffffff",
+            DrawerBackground = "#121212",
+            DrawerText = "#ffffff",
+            DrawerIcon = "#b3b3b3",
+            
+            // Dividers and lines
+            Divider = "#333333",
+            DividerLight = "#444444",
+            
+            // Action colors
+            ActionDefault = "#b3b3b3",
+            ActionDisabled = "#666666",
+            ActionDisabledBackground = "#333333",
+            
+            // Success, Error, Warning, Info with good contrast
+            Success = "#4CAF50",
+            Error = "#F44336",
+            Warning = "#FF9800",
+            Info = "#2196F3",
+            
+            // Hover states
+            HoverOpacity = 0.1,
+            
+            // Override colors for better gold/indigo theme
+            OverlayDark = "rgba(0,0,0,0.5)",
+            OverlayLight = "rgba(255,255,255,0.1)"
+        }
+    };
+}
