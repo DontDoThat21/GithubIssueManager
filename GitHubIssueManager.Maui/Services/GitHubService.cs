@@ -48,6 +48,20 @@ public class GitHubService
         }
     }
 
+    public async Task<GitHubRepository> GetRepositoryAsync(string owner, string repo)
+    {
+        try
+        {
+            var repository = await _client.Repository.Get(owner, repo);
+            return MapToGitHubRepository(repository);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching repository {Owner}/{Repo}", owner, repo);
+            throw;
+        }
+    }
+
     public async Task<IEnumerable<GitHubIssue>> GetIssuesAsync(string owner, string repo)
     {
         try
