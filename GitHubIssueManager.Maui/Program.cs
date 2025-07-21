@@ -3,8 +3,9 @@ using GitHubIssueManager.Maui.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using MudBlazor.Services;
+using System.Text;
+using GithubIssueManager.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,7 +19,7 @@ builder.Services.AddMudServices();
 // Add controllers for API endpoints
 builder.Services.AddControllers();
 
-// 🆓 FREE Authentication Setup - No external services required!
+// 🆓 Authentication Setup - No external services required!
 // 
 // This section configures authentication. Currently set up for FREE local JWT authentication.
 // Azure AD integration is optional and only activates if ClientId is configured.
@@ -64,9 +65,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// Configure HttpClient for GitHub API with proper lifetime management
+builder.Services.AddHttpClient<GitHubService>(client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(2); // Reasonable timeout for GitHub API calls
+})
+.SetHandlerLifetime(TimeSpan.FromMinutes(5)); // Manage connection pooling
+
 // Add GitHub Issue Manager services
 builder.Services.AddSingleton<AuthenticationService>();
-builder.Services.AddSingleton<GitHubService>();
+builder.Services.AddScoped<GitHubService>(); // Changed from Singleton to Scoped for proper HttpClient usage
 builder.Services.AddSingleton<RepositoryService>();
 builder.Services.AddSingleton<McpServerService>();
 
