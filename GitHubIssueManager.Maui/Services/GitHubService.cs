@@ -57,16 +57,7 @@ public class GitHubService
         }
         catch (Octokit.ApiException apiEx)
         {
-            _logger.LogError(apiEx, "GitHub API error fetching repository {Owner}/{Repo}: {StatusCode} {Message}", owner, repo, apiEx.HttpResponse?.StatusCode, apiEx.Message);
-            
-            // Provide more specific error messages based on API response
-            throw apiEx.HttpResponse?.StatusCode switch
-            {
-                System.Net.HttpStatusCode.Unauthorized => new UnauthorizedAccessException("GitHub authentication failed. Please check your Personal Access Token."),
-                System.Net.HttpStatusCode.Forbidden => new UnauthorizedAccessException("Access forbidden. Your GitHub token may not have permission to access this repository."),
-                System.Net.HttpStatusCode.NotFound => new ArgumentException($"Repository '{owner}/{repo}' not found or you don't have access to it."),
-                _ => new InvalidOperationException($"GitHub API error: {apiEx.Message}")
-            };
+            HandleApiException(apiEx, $"fetching repository {owner}/{repo}");
         }
         catch (HttpRequestException httpEx)
         {
