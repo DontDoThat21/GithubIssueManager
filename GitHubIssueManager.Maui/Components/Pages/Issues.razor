@@ -320,7 +320,7 @@ else
                     @foreach (var assignee in selectedIssue.Assignees)
                     {
                         <MudChip T="string" Size="Size.Small" Color="Color.Primary">
-                            <MudAvatar Size="Size.Small" Src="@assignee.AvatarUrl" Class="mr-1" />
+                            <MudAvatar Size="Size.Small" Src="@assignee.AvatarUrl" Style="margin-right: 0.25rem;" />
                             @assignee.Login
                         </MudChip>
                     }
