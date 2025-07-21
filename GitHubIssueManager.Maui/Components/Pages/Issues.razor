@@ -19,9 +19,12 @@
         </nav>
     </div>
     <div>
-        <button class="btn btn-primary" @onclick="() => ShowCreateIssueModal = true">
-            <i class="bi bi-plus-circle"></i> New Issue
-        </button>
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   StartIcon="Icons.Material.Filled.Add"
+                   OnClick="() => ShowCreateIssueModal = true">
+            New Issue
+        </MudButton>
     </div>
 </div>
 
@@ -132,28 +135,49 @@ else
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Create New Issue</h5>
-                    <button type="button" class="btn-close" @onclick="CloseCreateIssueModal"></button>
+                    <h5 class="modal-title">
+                        <MudIcon Icon="Icons.Material.Filled.Add" Style="margin-right: 8px;" />
+                        Create New Issue
+                    </h5>
+                    <MudIconButton Icon="Icons.Material.Filled.Close" 
+                                   Color="Color.Inherit" 
+                                   Size="Size.Small" 
+                                   OnClick="CloseCreateIssueModal" />
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Title</label>
-                        <input @bind="newIssueTitle" class="form-control" placeholder="Issue title..." />
+                    <div class="mb-4">
+                        <MudTextField @bind-Value="newIssueTitle" 
+                                      Label="Title" 
+                                      Placeholder="Issue title..."
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      Required="true" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea @bind="newIssueBody" class="form-control" rows="6" placeholder="Describe the issue..."></textarea>
+                        <MudTextField @bind-Value="newIssueBody" 
+                                      Label="Description" 
+                                      Placeholder="Describe the issue..."
+                                      Lines="6"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true" />
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseCreateIssueModal">Cancel</button>
-                    <button type="button" class="btn btn-primary" @onclick="CreateIssue" disabled="@(string.IsNullOrWhiteSpace(newIssueTitle) || isCreatingIssue)">
+                    <MudButton OnClick="CloseCreateIssueModal" 
+                               Variant="Variant.Text"
+                               Color="Color.Default">
+                        Cancel
+                    </MudButton>
+                    <MudButton OnClick="CreateIssue" 
+                               Variant="Variant.Filled" 
+                               Color="Color.Primary" 
+                               Disabled="@(string.IsNullOrWhiteSpace(newIssueTitle) || isCreatingIssue)">
                         @if (isCreatingIssue)
                         {
-                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
                         }
                         Create Issue
-                    </button>
+                    </MudButton>
                 </div>
             </div>
         </div>
