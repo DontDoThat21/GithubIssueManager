@@ -12,5 +12,5 @@ jobs:
       - name: Assign Copilot
         uses: kentaro-m/auto-assign-action@v2.0.0
         with:
-          assignees: 'copilot'
-          github-token: '${{ secrets.MY_PAT }}'
+          assignees: 'copilot'         # Assign to Copilot
+          repo-token: '${{ secrets.MY_PAT }}' # Use repo-token, not github-token
