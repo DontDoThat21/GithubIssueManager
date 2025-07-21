@@ -95,37 +95,42 @@ h1:focus {
     }
 }
 
-/* Fix for MCP Repositories View Card sizing - ensure equal heights in each row */
-.mud-grid.repositories-grid {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
-    gap: 24px !important;
-    grid-auto-rows: 1fr !important; /* This ensures equal heights */
-}
-
-.mud-grid.repositories-grid .mud-grid-item {
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-.mud-grid.repositories-grid .mud-grid-item .mud-card {
+/* Repository cards styling - ensure equal heights and proper spacing */
+.repositories-grid .mud-card,
+.demo-repositories-grid .mud-card {
     height: 100% !important;
     display: flex !important;
     flex-direction: column !important;
+    min-height: 320px !important; /* Ensure consistent minimum height */
 }
 
-.mud-grid.repositories-grid .mud-grid-item .mud-card .mud-card-content {
+.repositories-grid .mud-card-content,
+.demo-repositories-grid .mud-card-content {
     flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
+    justify-content: space-between !important;
 }
 
-/* More specific selectors for MudBlazor components */
-.repositories-grid .mud-grid-item-xs-12.mud-grid-item-md-6.mud-grid-item-lg-4 {
+.repositories-grid .mud-card-actions,
+.demo-repositories-grid .mud-card-actions {
+    margin-top: auto !important;
+}
+
+.repositories-grid .mud-grid-item,
+.demo-repositories-grid .mud-grid-item {
     display: flex !important;
+    align-items: stretch !important; /* Stretch items to fill row height */
 }
 
-.repositories-grid .mud-card.h-100.d-flex.flex-column {
-    min-height: 350px !important;
-    height: auto !important;
+/* Ensure all cards in a row have equal height */
+.repositories-grid,
+.demo-repositories-grid {
+    align-items: stretch !important;
+}
+
+.repositories-grid .mud-grid-item .mud-card.h-100,
+.demo-repositories-grid .mud-grid-item .mud-card.h-100 {
+    min-height: 320px !important;
+    height: 100% !important;
 }

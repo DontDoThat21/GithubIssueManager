@@ -67,7 +67,7 @@ else
     }
     else if (repositories.Any())
     {
-        <MudGrid Class="repositories-grid">
+        <MudGrid Class="repositories-grid" Spacing="1" Justify="Justify.FlexStart">
             @foreach (var repo in repositories)
             {
                 <MudItem xs="12" md="6" lg="4">
@@ -167,7 +167,7 @@ else
 <MudText Typo="Typo.body2" Class="mb-4">
     3 Demo Repositories (Enhanced Border Testing)
 </MudText>
-<MudGrid>
+<MudGrid Spacing="1" Justify="Justify.FlexStart" Class="demo-repositories-grid">
     <!-- Demo Card 1 -->
     <MudItem xs="12" md="6" lg="4">
         <MudCard Class="h-100 d-flex flex-column">
