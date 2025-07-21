@@ -665,23 +665,45 @@ else
         StateHasChanged();
     }
 
-    private static Severity GetErrorSeverity(string errorMessage)
+    private enum ErrorType
+    {
+        AuthenticationError,
+        NotFoundError,
+        NetworkError,
+        GeneralError
+    }
+
+    private static readonly Dictionary<ErrorType, Severity> ErrorSeverityMap = new()
+    {
+        { ErrorType.AuthenticationError, Severity.Warning },
+        { ErrorType.NotFoundError, Severity.Info },
+        { ErrorType.NetworkError, Severity.Error },
+        { ErrorType.GeneralError, Severity.Warning }
+    };
+
+    private static ErrorType CategorizeError(string errorMessage)
     {
         if (errorMessage.Contains("authentication") || errorMessage.Contains("token") || errorMessage.Contains("Unauthorized"))
         {
-            return Severity.Warning;
+            return ErrorType.AuthenticationError;
         }
         else if (errorMessage.Contains("not found") || errorMessage.Contains("Repository"))
         {
-            return Severity.Info;
+            return ErrorType.NotFoundError;
         }
         else if (errorMessage.Contains("network") || errorMessage.Contains("connectivity") || errorMessage.Contains("DNS"))
         {
-            return Severity.Error;
+            return ErrorType.NetworkError;
         }
         else
         {
-            return Severity.Warning;
+            return ErrorType.GeneralError;
         }
+    }
+
+    private static Severity GetErrorSeverity(string errorMessage)
+    {
+        var errorType = CategorizeError(errorMessage);
+        return ErrorSeverityMap[errorType];
     }
 }
