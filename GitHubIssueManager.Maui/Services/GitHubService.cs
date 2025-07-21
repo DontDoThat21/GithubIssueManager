@@ -1,5 +1,8 @@
 using GitHubIssueManager.Maui.Models;
 using Octokit;
+using System.Net.Http;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace GitHubIssueManager.Maui.Services;
 
@@ -7,6 +10,7 @@ public class GitHubService
 {
     private readonly GitHubClient _client;
     private readonly ILogger<GitHubService> _logger;
+    private string? _token;
 
     public GitHubService(ILogger<GitHubService> logger)
     {
@@ -17,6 +21,7 @@ public class GitHubService
     public void SetAuthentication(string token)
     {
         _client.Credentials = new Credentials(token);
+        _token = token;
     }
 
     public async Task<IEnumerable<GitHubRepository>> GetRepositoriesAsync()
@@ -57,7 +62,8 @@ public class GitHubService
         }
         catch (Octokit.ApiException apiEx)
         {
-            HandleApiException(apiEx, $"fetching repository {owner}/{repo}");
+            throw (apiEx);
+            //   HandleApiException(apiEx, $"fetching repository {owner}/{repo}");
         }
         catch (HttpRequestException httpEx)
         {
@@ -75,24 +81,33 @@ public class GitHubService
     {
         try
         {
-            // Validate authentication before making the call
-            ValidateAuthentication();
+            if (string.IsNullOrWhiteSpace(_token))
+                throw new UnauthorizedAccessException("GitHub authentication is required. Please configure your Personal Access Token.");
 
-            var issues = await _client.Issue.GetAllForRepository(owner, repo);
-            return issues.Select(MapToGitHubIssue);
-        }
-        catch (Octokit.ApiException apiEx)
-        {
-            _logger.LogError(apiEx, "GitHub API error fetching issues for {Owner}/{Repo}: {StatusCode} {Message}", owner, repo, apiEx.HttpResponse?.StatusCode, apiEx.Message);
-            
-            // Provide more specific error messages based on API response
-            throw apiEx.HttpResponse?.StatusCode switch
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("GitHubIssueManager");
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);
+
+            var url = $"https://api.github.com/repos/{owner}/{repo}/issues?state=all";
+            var response = await httpClient.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
             {
-                System.Net.HttpStatusCode.Unauthorized => new UnauthorizedAccessException("GitHub authentication failed. Please check your Personal Access Token and ensure it has the required 'repo' permissions."),
-                System.Net.HttpStatusCode.Forbidden => new UnauthorizedAccessException("Access forbidden. Your GitHub token may not have permission to access this repository, or you may have exceeded the API rate limit."),
-                System.Net.HttpStatusCode.NotFound => new ArgumentException($"Repository '{owner}/{repo}' not found. Please verify the repository name and that you have access to it."),
-                _ => new InvalidOperationException($"GitHub API error: {apiEx.Message}")
-            };
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("GitHub API error fetching issues for {Owner}/{Repo}: {StatusCode} {Message}", owner, repo, response.StatusCode, errorContent);
+                throw response.StatusCode switch
+                {
+                    System.Net.HttpStatusCode.Unauthorized => new UnauthorizedAccessException("GitHub authentication failed. Please check your Personal Access Token and ensure it has the required 'repo' permissions."),
+                    System.Net.HttpStatusCode.Forbidden => new UnauthorizedAccessException("Access forbidden. Your GitHub token may not have permission to access this repository, or you may have exceeded the API rate limit."),
+                    System.Net.HttpStatusCode.NotFound => new ArgumentException($"Repository '{owner}/{repo}' not found. Please verify the repository name and that you have access to it."),
+                    _ => new InvalidOperationException($"GitHub API error: {errorContent}")
+                };
+            }
+            var json = await response.Content.ReadAsStringAsync();
+            var issues = JsonSerializer.Deserialize<List<GitHubIssue>>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+            return issues ?? new List<GitHubIssue>();
         }
         catch (HttpRequestException httpEx)
         {
@@ -131,7 +146,10 @@ public class GitHubService
         try
         {
             ValidateIssueNumber(issueNumber);
-            
+            if (issueNumber > int.MaxValue)
+            {
+                throw new ArgumentException($"Issue number {issueNumber} exceeds the maximum supported value for GitHub API calls.", nameof(issueNumber));
+            }
             var issueUpdate = new IssueUpdate { Title = title, Body = body };
             var issue = await _client.Issue.Update(owner, repo, (int)issueNumber, issueUpdate);
             return MapToGitHubIssue(issue);
@@ -148,14 +166,16 @@ public class GitHubService
         try
         {
             ValidateIssueNumber(issueNumber);
-            
+            if (issueNumber > int.MaxValue)
+            {
+                throw new ArgumentException($"Issue number {issueNumber} exceeds the maximum supported value for GitHub API calls.", nameof(issueNumber));
+            }
             var issueUpdate = new IssueUpdate();
             issueUpdate.Assignees.Clear();
             foreach (var assignee in assignees)
             {
                 issueUpdate.Assignees.Add(assignee);
             }
-            
             var issue = await _client.Issue.Update(owner, repo, (int)issueNumber, issueUpdate);
             return MapToGitHubIssue(issue);
         }
@@ -196,11 +216,8 @@ public class GitHubService
                 _logger.LogWarning("Issue number {IssueNumber} is too large to check agent assignment. Maximum supported issue number is {MaxValue}.", issueNumber, int.MaxValue);
                 return false;
             }
-            
             var issue = await _client.Issue.Get(owner, repo, (int)issueNumber);
-            
             if (issue == null) return false;
-            
             return issue.Assignees.Any(a => agentLogins.Contains(a.Login, StringComparer.OrdinalIgnoreCase));
         }
         catch (Exception ex)
@@ -284,7 +301,7 @@ public class GitHubService
                 CreatedAt = issue.Milestone.CreatedAt.DateTime,
                 UpdatedAt = issue.Milestone.UpdatedAt?.DateTime ?? issue.Milestone.CreatedAt.DateTime
             } : null,
-            Comments = issue.Comments
+            CommentCount = issue.Comments
         };
     }
 
@@ -298,6 +315,14 @@ public class GitHubService
         if (issueNumber > int.MaxValue)
         {
             throw new ArgumentException($"Issue number {issueNumber} is too large. Maximum supported issue number is {int.MaxValue}.", nameof(issueNumber));
+        }
+    }
+
+    private void ValidateAuthentication()
+    {
+        if (_client.Credentials == null || string.IsNullOrWhiteSpace(_client.Credentials.Password))
+        {
+            throw new UnauthorizedAccessException("GitHub authentication is required. Please configure your Personal Access Token.");
         }
     }
 }

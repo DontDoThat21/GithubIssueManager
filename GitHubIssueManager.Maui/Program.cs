@@ -5,7 +5,6 @@ using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.Tokens;
 using MudBlazor.Services;
 using System.Text;
-using GithubIssueManager.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,7 +75,7 @@ builder.Services.AddHttpClient<GitHubService>(client =>
 builder.Services.AddSingleton<AuthenticationService>();
 builder.Services.AddScoped<GitHubService>(); // Changed from Singleton to Scoped for proper HttpClient usage
 builder.Services.AddSingleton<RepositoryService>();
-builder.Services.AddSingleton<McpServerService>();
+builder.Services.AddScoped<McpServerService>(); // Changed from Singleton to Scoped to resolve DI error
 
 var app = builder.Build();
 

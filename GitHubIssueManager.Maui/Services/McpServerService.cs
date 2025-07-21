@@ -1,4 +1,4 @@
-using GithubIssueManager.Services;
+using GitHubIssueManager.Maui.Services;
 
 namespace GitHubIssueManager.Maui.Services;
 

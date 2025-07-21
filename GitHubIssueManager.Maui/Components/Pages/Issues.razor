@@ -125,11 +125,11 @@ else if (issues.Any())
                                 <MudText Typo="Typo.body2" Color="Color.Secondary">
                                     opened @issue.CreatedAt.ToString("MMM dd, yyyy")
                                 </MudText>
-                                @if (issue.Comments > 0)
+                                @if (issue.CommentCount > 0)
                                 {
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                                         <MudIcon Icon="@Icons.Material.Filled.Comment" Size="Size.Small" Color="Color.Secondary" />
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary">@issue.Comments</MudText>
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary">@issue.CommentCount</MudText>
                                     </MudStack>
                                 }
                             </MudStack>

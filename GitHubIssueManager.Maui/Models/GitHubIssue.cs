@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using GitHubIssueManager.Maui.Models;
 
 /// <summary>
 /// Represents a GitHub issue with proper support for large Int64 identifiers
@@ -99,27 +100,6 @@ public class GitHubIssue
     public bool IsOpen => string.Equals(State, "open", StringComparison.OrdinalIgnoreCase);
     public bool IsClosed => string.Equals(State, "closed", StringComparison.OrdinalIgnoreCase);
     public bool IsPullRequest => PullRequest != null;
-}
-
-/// <summary>
-/// Represents a GitHub user with Int64 ID support
-/// </summary>
-public class GitHubUser
-{
-    [JsonPropertyName("id")]
-    public long Id { get; set; }
-
-    [JsonPropertyName("login")]
-    public string Login { get; set; } = string.Empty;
-
-    [JsonPropertyName("avatar_url")]
-    public string AvatarUrl { get; set; } = string.Empty;
-
-    [JsonPropertyName("html_url")]
-    public string HtmlUrl { get; set; } = string.Empty;
-
-    [JsonPropertyName("type")]
-    public string Type { get; set; } = string.Empty;
 }
 
 /// <summary>
