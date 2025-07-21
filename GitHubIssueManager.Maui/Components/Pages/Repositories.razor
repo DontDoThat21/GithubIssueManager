@@ -8,156 +8,207 @@
 
 <PageTitle>Repositories</PageTitle>
 
-<h1>GitHub Repositories</h1>
+<MudText Typo="Typo.h3" GutterBottom="true">GitHub Repositories</MudText>
 
 @if (!AuthService.IsAuthenticated)
 {
-    <div class="alert alert-warning">
-        <h4>Authentication Required</h4>
-        <p>Please configure your GitHub token in the <a href="/settings">Settings</a> page to access repositories.</p>
-    </div>
+    <MudAlert Severity="Severity.Warning">
+        <MudText Typo="Typo.h6" Class="mb-2">Authentication Required</MudText>
+        <MudText>
+            Please configure your GitHub token in the 
+            <MudLink Href="/settings" Color="Color.Primary">Settings</MudLink> 
+            page to access repositories.
+        </MudText>
+    </MudAlert>
 }
 else
 {
-    <div class="mb-3">
-        <div class="row">
-            <div class="col-md-8">
-                <input @bind="searchQuery" @onkeypress="OnSearchKeyPress" class="form-control" placeholder="Search repositories..." />
-            </div>
-            <div class="col-md-4">
-                <button class="btn btn-primary" @onclick="SearchRepositories">Search</button>
-                <button class="btn btn-secondary ms-2" @onclick="LoadMyRepositories">My Repos</button>
-            </div>
-        </div>
-    </div>
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" md="8">
+            <MudTextField @bind-Value="searchQuery" 
+                          Label="Search repositories..." 
+                          Variant="Variant.Outlined" 
+                          Adornment="Adornment.End" 
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          @onkeypress="OnSearchKeyPress"
+                          FullWidth="true" />
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          StartIcon="@Icons.Material.Filled.Search"
+                          OnClick="SearchRepositories">
+                    Search
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Primary" 
+                          StartIcon="@Icons.Material.Filled.Folder"
+                          OnClick="LoadMyRepositories">
+                    My Repos
+                </MudButton>
+            </MudStack>
+        </MudItem>
+    </MudGrid>
 
     @if (!isLoading && repositories.Any())
     {
-        <div class="mb-3">
-            <span class="badge bg-info">@repositories.Count Repository@(repositories.Count == 1 ? "" : "s")</span>
-        </div>
+        <MudText Typo="Typo.body2" Class="mb-4">
+            @repositories.Count Repository@(repositories.Count == 1 ? "" : "s")
+        </MudText>
     }
 
     @if (isLoading)
     {
-        <div class="text-center">
-            <div class="spinner-border" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-        </div>
+        <MudStack AlignItems="AlignItems.Center" Class="py-8">
+            <MudProgressCircular Indeterminate="true" />
+            <MudText Typo="Typo.body2">Loading repositories...</MudText>
+        </MudStack>
     }
     else if (repositories.Any())
     {
-        <div class="row">
+        <MudGrid>
             @foreach (var repo in repositories)
             {
-                <div class="col-md-6 col-lg-4 mb-3">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <a href="/issues/@repo.Owner.Login/@repo.Name">@repo.Name</a>
-                                @if (repo.Private)
+                <MudItem xs="12" md="6" lg="4">
+                    <MudCard Class="h-100 d-flex flex-column">
+                        <MudCardContent Class="flex-grow-1">
+                            <MudStack>
+                                <MudText Typo="Typo.h6" Class="d-flex align-center">
+                                    <MudLink Href="@($"/issues/{repo.Owner.Login}/{repo.Name}")" Color="Color.Primary">
+                                        @repo.Name
+                                    </MudLink>
+                                    @if (repo.Private)
+                                    {
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Private</MudText>
+                                    }
+                                </MudText>
+                                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">@repo.Owner.Login</MudText>
+                                <MudText Typo="Typo.body2">@repo.Description</MudText>
+                                
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-2">
+                                    <MudStack Row="true" Spacing="3">
+                                        <MudText Typo="Typo.caption" Class="d-flex align-center">
+                                            <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" Class="mr-1" />
+                                            @repo.StargazersCount
+                                        </MudText>
+                                        <MudText Typo="Typo.caption" Class="d-flex align-center">
+                                            <MudIcon Icon="@Icons.Material.Filled.CallSplit" Size="Size.Small" Class="mr-1" />
+                                            @repo.ForksCount
+                                        </MudText>
+                                        <MudLink Href="@($"/issues/{repo.Owner.Login}/{repo.Name}")" Class="d-flex align-center" Color="Color.Primary">
+                                            <MudIcon Icon="@Icons.Material.Filled.BugReport" Size="Size.Small" Class="mr-1" />
+                                            <MudText Typo="Typo.caption">@repo.OpenIssuesCount</MudText>
+                                        </MudLink>
+                                    </MudStack>
+                                </MudStack>
+                                
+                                @if (!string.IsNullOrEmpty(repo.Language))
                                 {
-                                    <span class="badge bg-secondary ms-1">Private</span>
+                                    <MudText Typo="Typo.caption" Color="Color.Primary" Class="align-self-start">
+                                        @repo.Language
+                                    </MudText>
                                 }
-                            </h5>
-                            <h6 class="card-subtitle mb-2 text-muted">@repo.Owner.Login</h6>
-                            <p class="card-text">@repo.Description</p>
-                            <div class="row text-muted small mb-2">
-                                <div class="col">
-                                    <i class="bi bi-star"></i> @repo.StargazersCount Stars
-                                </div>
-                                <div class="col">
-                                    <i class="bi bi-diagram-3"></i> @repo.ForksCount Forks
-                                </div>
-                                <div class="col">
-                                    <a href="/issues/@repo.Owner.Login/@repo.Name" class="text-decoration-none">
-                                        <i class="bi bi-exclamation-circle"></i> @repo.OpenIssuesCount Issues
-                                    </a>
-                                </div>
-                            </div>
-                            @if (!string.IsNullOrEmpty(repo.Language))
-                            {
-                                <div class="mb-2">
-                                    <span class="badge bg-info">@repo.Language</span>
-                                </div>
-                            }
-                        </div>
-                        <div class="card-footer">
-                            @if (RepositoryService.IsWatched(repo.Id))
-                            {
-                                <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveFromWatchlist(repo)">
-                                    Remove from Watchlist
-                                </button>
-                                <a href="/issues/@repo.Owner.Login/@repo.Name" class="btn btn-sm btn-primary ms-2">
-                                    View Issues
-                                </a>
-                            }
-                            else
-                            {
-                                <button class="btn btn-sm btn-outline-primary" @onclick="() => AddToWatchlist(repo)">
-                                    Add to Watchlist
-                                </button>
-                            }
-                            <a href="git-client://clone/?repo=@repo.HtmlUrl" class="btn btn-sm btn-outline-secondary ms-2" title="Open in Visual Studio 2022">
-                                <i class="bi bi-code-slash"></i> VS 2022
-                            </a>
-                            <button class="btn btn-sm btn-success ms-2" @onclick="() => ShowAddTaskModal(repo)">
-                                <i class="bi bi-plus-circle"></i> Add Task
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                            </MudStack>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudStack Row="true" Spacing="1" Style="width: 100%" Wrap="Wrap.Wrap">
+                                @if (RepositoryService.IsWatched(repo.Id))
+                                {
+                                    <MudButton Size="Size.Small" 
+                                              Variant="Variant.Outlined" 
+                                              Color="Color.Error" 
+                                              StartIcon="@Icons.Material.Filled.RemoveCircle"
+                                              OnClick="() => RemoveFromWatchlist(repo)">
+                                        Remove
+                                    </MudButton>
+                                    <MudButton Size="Size.Small" 
+                                              Variant="Variant.Filled" 
+                                              Color="Color.Primary" 
+                                              StartIcon="@Icons.Material.Filled.BugReport"
+                                              Href="@($"/issues/{repo.Owner.Login}/{repo.Name}")">
+                                        Issues
+                                    </MudButton>
+                                }
+                                else
+                                {
+                                    <MudButton Size="Size.Small" 
+                                              Variant="Variant.Outlined" 
+                                              Color="Color.Primary" 
+                                              StartIcon="@Icons.Material.Filled.Add"
+                                              OnClick="() => AddToWatchlist(repo)">
+                                        Watch
+                                    </MudButton>
+                                }
+                                <MudButton Size="Size.Small" 
+                                          Variant="Variant.Outlined" 
+                                          Color="Color.Secondary" 
+                                          StartIcon="@Icons.Material.Filled.Code"
+                                          Href="@($"git-client://clone/?repo={repo.HtmlUrl}")">
+                                    VS
+                                </MudButton>
+                                <MudButton Size="Size.Small" 
+                                          Variant="Variant.Filled" 
+                                          Color="Color.Success" 
+                                          StartIcon="@Icons.Material.Filled.Add"
+                                          OnClick="() => ShowAddTaskModal(repo)">
+                                    Task
+                                </MudButton>
+                            </MudStack>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
             }
-        </div>
+        </MudGrid>
     }
     else if (!isLoading)
     {
-        <div class="alert alert-info">
-            <p>No repositories found. Use the search box above to find repositories or click "My Repos" to load your repositories.</p>
-        </div>
+        <MudAlert Severity="Severity.Info">
+            <MudText>
+                No repositories found. Use the search box above to find repositories or click "My Repos" to load your repositories.
+            </MudText>
+        </MudAlert>
     }
 }
 
-<!-- Add Task Modal -->
-@if (showAddTaskModal)
-{
-    <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add Task to @selectedRepository?.Name</h5>
-                    <button type="button" class="btn-close" aria-label="Close" @onclick="CloseAddTaskModal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="taskTitle" class="form-label">Task Title *</label>
-                        <input @bind="newTaskTitle" class="form-control" id="taskTitle" placeholder="Enter task title..." />
-                    </div>
-                    <div class="mb-3">
-                        <label for="taskDescription" class="form-label">Task Description</label>
-                        <textarea @bind="newTaskDescription" class="form-control" id="taskDescription" rows="4" placeholder="Enter task description..."></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Task JSON (MCP Format)</label>
-                        <textarea class="form-control" rows="6" readonly>@GetTaskJson()</textarea>
-                        <small class="form-text text-muted">This JSON shows the MCP metadata that will be included with the GitHub issue.</small>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseAddTaskModal">Cancel</button>
-                    <button type="button" class="btn btn-primary" @onclick="CreateTask" disabled="@(string.IsNullOrWhiteSpace(newTaskTitle) || isCreatingTask)">
-                        @if (isCreatingTask)
-                        {
-                            <span class="spinner-border spinner-border-sm me-2"></span>
-                        }
-                        Create Task
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
+<MudDialog @bind-Visible="showAddTaskModal" MaxWidth="MaxWidth.Medium">
+    <DialogContent>
+        <MudText Typo="Typo.h6" Class="mb-4">Add Task to @selectedRepository?.Name</MudText>
+        
+        <MudTextField @bind-Value="newTaskTitle" 
+                      Label="Task Title *" 
+                      Variant="Variant.Outlined" 
+                      Required="true"
+                      Class="mb-4" />
+        
+        <MudTextField @bind-Value="newTaskDescription" 
+                      Label="Task Description" 
+                      Variant="Variant.Outlined" 
+                      Lines="4"
+                      Class="mb-4" />
+        
+        <MudTextField Value="@GetTaskJson()" 
+                      Label="Task JSON (MCP Format)" 
+                      Variant="Variant.Outlined" 
+                      Lines="6"
+                      ReadOnly="true"
+                      HelperText="This JSON shows the MCP metadata that will be included with the GitHub issue."
+                      Class="mb-4" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseAddTaskModal" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="CreateTask" 
+                   Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   Disabled="@(string.IsNullOrWhiteSpace(newTaskTitle) || isCreatingTask)">
+            @if (isCreatingTask)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Create Task
+        </MudButton>
+    </DialogActions>
+</MudDialog>
 
 @code {
     private List<GitHubRepository> repositories = new();
