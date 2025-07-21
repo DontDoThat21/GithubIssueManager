@@ -55,10 +55,19 @@ public class GitHubService
             var repository = await _client.Repository.Get(owner, repo);
             return MapToGitHubRepository(repository);
         }
+        catch (Octokit.ApiException apiEx)
+        {
+            HandleApiException(apiEx, $"fetching repository {owner}/{repo}");
+        }
+        catch (HttpRequestException httpEx)
+        {
+            _logger.LogError(httpEx, "Network error fetching repository {Owner}/{Repo}", owner, repo);
+            throw new InvalidOperationException("Unable to connect to GitHub API. Please check your internet connection.");
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching repository {Owner}/{Repo}", owner, repo);
-            throw;
+            _logger.LogError(ex, "Unexpected error fetching repository {Owner}/{Repo}", owner, repo);
+            throw new InvalidOperationException($"An unexpected error occurred: {ex.Message}");
         }
     }
 
@@ -66,13 +75,39 @@ public class GitHubService
     {
         try
         {
+            // Validate authentication before making the call
+            ValidateAuthentication();
+
             var issues = await _client.Issue.GetAllForRepository(owner, repo);
             return issues.Select(MapToGitHubIssue);
         }
+        catch (Octokit.ApiException apiEx)
+        {
+            _logger.LogError(apiEx, "GitHub API error fetching issues for {Owner}/{Repo}: {StatusCode} {Message}", owner, repo, apiEx.HttpResponse?.StatusCode, apiEx.Message);
+            
+            // Provide more specific error messages based on API response
+            throw apiEx.HttpResponse?.StatusCode switch
+            {
+                System.Net.HttpStatusCode.Unauthorized => new UnauthorizedAccessException("GitHub authentication failed. Please check your Personal Access Token and ensure it has the required 'repo' permissions."),
+                System.Net.HttpStatusCode.Forbidden => new UnauthorizedAccessException("Access forbidden. Your GitHub token may not have permission to access this repository, or you may have exceeded the API rate limit."),
+                System.Net.HttpStatusCode.NotFound => new ArgumentException($"Repository '{owner}/{repo}' not found. Please verify the repository name and that you have access to it."),
+                _ => new InvalidOperationException($"GitHub API error: {apiEx.Message}")
+            };
+        }
+        catch (HttpRequestException httpEx)
+        {
+            _logger.LogError(httpEx, "Network error fetching issues for {Owner}/{Repo}", owner, repo);
+            throw new InvalidOperationException("Unable to connect to GitHub API. Please check your internet connection and try again. If the problem persists, GitHub services may be temporarily unavailable.");
+        }
+        catch (TaskCanceledException tcEx)
+        {
+            _logger.LogError(tcEx, "Timeout error fetching issues for {Owner}/{Repo}", owner, repo);
+            throw new TimeoutException("Request to GitHub API timed out. Please try again later.");
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching issues for {Owner}/{Repo}", owner, repo);
-            throw;
+            _logger.LogError(ex, "Unexpected error fetching issues for {Owner}/{Repo}", owner, repo);
+            throw new InvalidOperationException($"An unexpected error occurred while fetching issues: {ex.Message}");
         }
     }
 

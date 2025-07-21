@@ -191,16 +191,72 @@ else if (issues.Any())
 }
 else if (!string.IsNullOrEmpty(errorMessage))
 {
-    <MudAlert Severity="Severity.Warning" Class="mb-4">
-        <MudText Typo="Typo.h6" Class="mb-2">Error Loading Issues</MudText>
-        <MudText>@errorMessage</MudText>
-        @if (errorMessage.Contains("Authentication"))
+    <MudAlert Severity="@GetErrorSeverity(errorMessage)" Class="mb-4">
+        <MudText Typo="Typo.h6" Class="mb-2">Unable to Load Issues</MudText>
+        <MudText Class="mb-2">@errorMessage</MudText>
+        
+        @if (errorMessage.Contains("authentication") || errorMessage.Contains("token"))
         {
-            <MudButton Variant="Variant.Filled" 
+            <MudStack Row="true" Spacing="2" Class="mt-3">
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           Href="/settings" 
+                           StartIcon="@Icons.Material.Filled.Settings">
+                    Configure Token
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Info" 
+                           Href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"
+                           Target="_blank"
+                           StartIcon="@Icons.Material.Filled.Help">
+                    Token Help
+                </MudButton>
+            </MudStack>
+        }
+        else if (errorMessage.Contains("network") || errorMessage.Contains("connectivity") || errorMessage.Contains("DNS"))
+        {
+            <MudStack Spacing="2" Class="mt-3">
+                <MudText Typo="Typo.body2" Color="Color.Info">
+                    <strong>Troubleshooting steps:</strong>
+                </MudText>
+                <MudText Typo="Typo.body2">• Check your internet connection</MudText>
+                <MudText Typo="Typo.body2">• Verify that api.github.com is accessible from your network</MudText>
+                <MudText Typo="Typo.body2">• If behind a corporate firewall, contact your IT administrator</MudText>
+                <MudText Typo="Typo.body2">• Try again later as GitHub services may be temporarily unavailable</MudText>
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Primary" 
+                           OnClick="LoadData"
+                           StartIcon="@Icons.Material.Filled.Refresh"
+                           Class="mt-2">
+                    Try Again
+                </MudButton>
+            </MudStack>
+        }
+        else if (errorMessage.Contains("not found") || errorMessage.Contains("Repository"))
+        {
+            <MudStack Row="true" Spacing="2" Class="mt-3">
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Primary" 
+                           Href="/repositories" 
+                           StartIcon="@Icons.Material.Filled.Search">
+                    Browse Repositories
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Info" 
+                           OnClick="LoadData"
+                           StartIcon="@Icons.Material.Filled.Refresh">
+                    Retry
+                </MudButton>
+            </MudStack>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Outlined" 
                        Color="Color.Primary" 
-                       Href="/settings" 
+                       OnClick="LoadData"
+                       StartIcon="@Icons.Material.Filled.Refresh"
                        Class="mt-2">
-                Go to Settings
+                Try Again
             </MudButton>
         }
     </MudAlert>
@@ -434,22 +490,38 @@ else
             var result = await GitHubService.GetIssuesAsync(Owner, Repo);
             issues = result.ToList();
         }
+        catch (UnauthorizedAccessException authEx)
+        {
+            issues = new List<GitHubIssue>();
+            errorMessage = authEx.Message;
+        }
+        catch (ArgumentException argEx)
+        {
+            issues = new List<GitHubIssue>();
+            errorMessage = argEx.Message;
+        }
+        catch (TimeoutException timeoutEx)
+        {
+            issues = new List<GitHubIssue>();
+            errorMessage = timeoutEx.Message;
+        }
+        catch (InvalidOperationException opEx)
+        {
+            issues = new List<GitHubIssue>();
+            errorMessage = opEx.Message;
+        }
         catch (Exception ex)
         {
             issues = new List<GitHubIssue>();
             
-            // Check if this is an authentication error
-            if (ex.Message.Contains("401") || ex.Message.Contains("Unauthorized"))
+            // Fallback for any other unexpected errors
+            if (ex.Message.Contains("DNS") || ex.Message.Contains("proxy") || ex.Message.Contains("network"))
             {
-                errorMessage = "Authentication required to view issues from this repository. Please configure your GitHub token in the Settings page.";
-            }
-            else if (ex.Message.Contains("404") || ex.Message.Contains("Not Found"))
-            {
-                errorMessage = "Repository not found. Please check the repository name and try again.";
+                errorMessage = "Network connectivity issue detected. Please check your internet connection and ensure GitHub API access is not blocked by your network or firewall. If you're behind a corporate network, contact your IT administrator.";
             }
             else
             {
-                errorMessage = $"Error loading issues: {ex.Message}";
+                errorMessage = $"An unexpected error occurred while loading issues: {ex.Message}";
             }
         }
         finally
@@ -591,5 +663,47 @@ else
         selectedAssignees.Clear();
         agentAssignmentWarning = null;
         StateHasChanged();
+    }
+
+    private enum ErrorType
+    {
+        AuthenticationError,
+        NotFoundError,
+        NetworkError,
+        GeneralError
+    }
+
+    private static readonly Dictionary<ErrorType, Severity> ErrorSeverityMap = new()
+    {
+        { ErrorType.AuthenticationError, Severity.Warning },
+        { ErrorType.NotFoundError, Severity.Info },
+        { ErrorType.NetworkError, Severity.Error },
+        { ErrorType.GeneralError, Severity.Warning }
+    };
+
+    private static ErrorType CategorizeError(string errorMessage)
+    {
+        if (errorMessage.Contains("authentication") || errorMessage.Contains("token") || errorMessage.Contains("Unauthorized"))
+        {
+            return ErrorType.AuthenticationError;
+        }
+        else if (errorMessage.Contains("not found") || errorMessage.Contains("Repository"))
+        {
+            return ErrorType.NotFoundError;
+        }
+        else if (errorMessage.Contains("network") || errorMessage.Contains("connectivity") || errorMessage.Contains("DNS"))
+        {
+            return ErrorType.NetworkError;
+        }
+        else
+        {
+            return ErrorType.GeneralError;
+        }
+    }
+
+    private static Severity GetErrorSeverity(string errorMessage)
+    {
+        var errorType = CategorizeError(errorMessage);
+        return ErrorSeverityMap[errorType];
     }
 }
