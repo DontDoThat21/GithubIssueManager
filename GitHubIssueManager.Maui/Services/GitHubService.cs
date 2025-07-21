@@ -75,11 +75,8 @@ public class GitHubService
     {
         try
         {
-            // Check if client has authentication before making the call
-            if (_client.Credentials == null || _client.Credentials == Credentials.Anonymous)
-            {
-                throw new UnauthorizedAccessException("GitHub authentication is required to access repository issues. Please configure your GitHub Personal Access Token.");
-            }
+            // Validate authentication before making the call
+            ValidateAuthentication();
 
             var issues = await _client.Issue.GetAllForRepository(owner, repo);
             return issues.Select(MapToGitHubIssue);
