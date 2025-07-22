@@ -121,11 +121,11 @@ h1:focus {
 }
 
 /* More specific selectors for MudBlazor components */
-.repositories-grid .mud-grid-item-xs-12.mud-grid-item-md-6.mud-grid-item-lg-4 {
+.repositories-grid .mud-grid-item-xs-12.mud-grid-item-sm-6.mud-grid-item-md-4.mud-grid-item-lg-3 {
     display: flex !important;
 }
 
 .repositories-grid .mud-card.h-100.d-flex.flex-column {
-    min-height: 350px !important;
+    min-height: 320px !important;
     height: auto !important;
 }
