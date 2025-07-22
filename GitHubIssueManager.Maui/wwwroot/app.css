@@ -97,10 +97,10 @@ h1:focus {
 
 /* Fix for MCP Repositories View Card sizing - ensure equal heights in each row */
 .mud-grid.repositories-grid {
-    display: grid !important;
+    /*display: grid !important;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
     gap: 24px !important;
-    grid-auto-rows: 1fr !important; /* This ensures equal heights */
+    grid-auto-rows: 1fr !important;*/ /* This ensures equal heights */
 }
 
 .mud-grid.repositories-grid .mud-grid-item {

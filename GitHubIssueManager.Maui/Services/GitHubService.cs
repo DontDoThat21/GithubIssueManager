@@ -186,6 +186,46 @@ public class GitHubService
         }
     }
 
+    /// <summary>
+    /// Assigns the Copilot agent (copilot-swe-agent) to a GitHub issue using the REST API.
+    /// </summary>
+    /// <param name="owner">Repository owner</param>
+    /// <param name="repo">Repository name</param>
+    /// <param name="issueNumber">Issue number</param>
+    /// <returns>The updated GitHubIssue if successful</returns>
+    public async Task<GitHubIssue> AssignIssueToCopilotAsync(string owner, string repo, long issueNumber)
+    {
+        if (string.IsNullOrWhiteSpace(_token))
+            throw new UnauthorizedAccessException("GitHub authentication is required. Please configure your Personal Access Token.");
+        if (issueNumber <= 0)
+            throw new ArgumentException("Issue number must be greater than zero.", nameof(issueNumber));
+
+        using var httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("GitHubIssueManager");
+        httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);
+
+        var url = $"https://api.github.com/repos/{owner}/{repo}/issues/{issueNumber}/assignees";
+        var payload = new { assignees = new[] { "copilot-swe-agent" } };
+        var content = new StringContent(JsonSerializer.Serialize(payload), System.Text.Encoding.UTF8, "application/json");
+        var response = await httpClient.PostAsync(url, content);
+        var json = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogError("GitHub API error assigning Copilot to issue {Owner}/{Repo} #{IssueNumber}: {StatusCode} {Message}", owner, repo, issueNumber, response.StatusCode, json);
+            throw response.StatusCode switch
+            {
+                System.Net.HttpStatusCode.Unauthorized => new UnauthorizedAccessException("GitHub authentication failed. Please check your Personal Access Token and ensure it has the required 'repo' permissions."),
+                System.Net.HttpStatusCode.Forbidden => new UnauthorizedAccessException("Access forbidden. Your GitHub token may not have permission to assign Copilot, or you may have exceeded the API rate limit."),
+                System.Net.HttpStatusCode.NotFound => new ArgumentException($"Repository '{owner}/{repo}' or issue #{issueNumber} not found. Please verify the repository and issue number."),
+                _ => new InvalidOperationException($"GitHub API error: {json}")
+            };
+        }
+        var issue = JsonSerializer.Deserialize<GitHubIssue>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        if (issue == null)
+            throw new InvalidOperationException("Failed to parse updated issue from GitHub API response.");
+        return issue;
+    }
+
     public async Task<IEnumerable<GitHubUser>> GetAvailableAssigneesAsync(string owner, string repo)
     {
         try
@@ -211,13 +251,26 @@ public class GitHubService
     {
         try
         {
-            if (issueNumber > int.MaxValue)
+            if (string.IsNullOrWhiteSpace(_token))
+                throw new UnauthorizedAccessException("GitHub authentication is required. Please configure your Personal Access Token.");
+            if (issueNumber <= 0)
+                throw new ArgumentException("Issue number must be greater than zero.", nameof(issueNumber));
+
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("GitHubIssueManager");
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);
+
+            var url = $"https://api.github.com/repos/{owner}/{repo}/issues/{issueNumber}";
+            var response = await httpClient.GetAsync(url);
+            var json = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Issue number {IssueNumber} is too large to check agent assignment. Maximum supported issue number is {MaxValue}.", issueNumber, int.MaxValue);
+                _logger.LogError("GitHub API error checking agent assignment for issue {Owner}/{Repo} #{IssueNumber}: {StatusCode} {Message}", owner, repo, issueNumber, response.StatusCode, json);
                 return false;
             }
-            var issue = await _client.Issue.Get(owner, repo, (int)issueNumber);
-            if (issue == null) return false;
+            var issue = JsonSerializer.Deserialize<GitHubIssue>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (issue == null || issue.Assignees == null)
+                return false;
             return issue.Assignees.Any(a => agentLogins.Contains(a.Login, StringComparer.OrdinalIgnoreCase));
         }
         catch (Exception ex)

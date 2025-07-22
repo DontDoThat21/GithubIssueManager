@@ -8,6 +8,24 @@
 
 <PageTitle>Repositories</PageTitle>
 
+<p>test12343233</p>
+
+<!-- Repository Header Card -->
+<MudPaper Elevation="2" Class="pa-4 mb-4" Style="background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);">
+    <MudStack Spacing="1">
+        <MudBreadcrumbs Separator="@Icons.Material.Filled.ChevronRight">
+            <MudBreadcrumbItem Href="/">Home</MudBreadcrumbItem>
+            <MudBreadcrumbItem Href="/repositories" Disabled="true">Repositories</MudBreadcrumbItem>
+        </MudBreadcrumbs>
+        <MudDivider />
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Folder" Color="Color.Primary" Size="Size.Large" />
+            <MudText Typo="Typo.h4" Color="Color.Default">GitHub Repositories</MudText>
+        </MudStack>
+        <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-1">Browse and manage your GitHub repositories.</MudText>
+    </MudStack>
+</MudPaper>
+
 <MudText Typo="Typo.h3" GutterBottom="true">GitHub Repositories</MudText>
 
 @if (!AuthService.IsAuthenticated)
@@ -54,7 +72,7 @@ else
     @if (!isLoading && repositories.Any())
     {
         <MudText Typo="Typo.body2" Class="mb-4">
-            @repositories.Count Repository@(repositories.Count == 1 ? "" : "s")
+            @repositories.Count Repository@(repositories.Count == 1 ? "" : "s1a23a")
         </MudText>
     }
 
@@ -67,7 +85,7 @@ else
     }
     else if (repositories.Any())
     {
-        <MudGrid Class="repositories-grid">
+        <MudGrid>
             @foreach (var repo in repositories)
             {
                 <MudItem xs="12" md="6" lg="4">
