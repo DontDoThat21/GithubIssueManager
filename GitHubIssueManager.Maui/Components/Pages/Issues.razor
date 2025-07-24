@@ -129,6 +129,13 @@ else if (issues.Any())
                         <MudStack Row="true" Spacing="1">
                             <MudButton Size="Size.Small" 
                                        Variant="Variant.Outlined" 
+                                       Color="Color.Secondary" 
+                                       StartIcon="@Icons.Material.Filled.Edit"
+                                       OnClick="() => ShowEditModal(issue)">
+                                Edit
+                            </MudButton>
+                            <MudButton Size="Size.Small" 
+                                       Variant="Variant.Outlined" 
                                        Color="Color.Primary" 
                                        StartIcon="@Icons.Material.Filled.PersonAdd"
                                        OnClick="() => ShowAssignModal(issue)">
@@ -452,6 +459,59 @@ else
     </DialogActions>
 </MudDialog>
 
+<!-- Edit Issue Modal -->
+<MudDialog @bind-Visible="ShowEditIssueModal" Options="@(new DialogOptions { MaxWidth = MaxWidth.Large })">
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Color="Color.Secondary" />
+                <MudText Typo="Typo.h6">Edit Issue #@selectedIssue?.Number</MudText>
+            </MudStack>
+            
+            <!-- Issue Title -->
+            <MudTextField @bind-Value="editIssueTitle" 
+                          Label="Issue Title" 
+                          Placeholder="Enter issue title..."
+                          Variant="Variant.Outlined"
+                          FullWidth="true"
+                          Required="true"
+                          HelperText="Brief title that describes the issue" />
+            
+            <!-- Issue Description -->
+            <MudTextField @bind-Value="editIssueBody" 
+                          Label="Issue Description" 
+                          Placeholder="Provide a detailed description of the issue..."
+                          Lines="8"
+                          Variant="Variant.Outlined"
+                          FullWidth="true"
+                          HelperText="Detailed description of the issue (supports Markdown)" />
+            
+            @if (!string.IsNullOrEmpty(editErrorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true">
+                    <MudText Typo="Typo.body2">@editErrorMessage</MudText>
+                </MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseEditModal" 
+                   Variant="Variant.Text">
+            Cancel
+        </MudButton>
+        <MudButton OnClick="SaveEditedIssue" 
+                   Variant="Variant.Filled" 
+                   Color="Color.Secondary" 
+                   Disabled="@(string.IsNullOrWhiteSpace(editIssueTitle) || isEditingIssue)">
+            @if (isEditingIssue)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
+            }
+            Save Changes
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
 @code {
     [Parameter] public string Owner { get; set; } = string.Empty;
     [Parameter] public string Repo { get; set; } = string.Empty;
@@ -484,6 +544,13 @@ else
 
     // Track copilot assignment loading state per issue
     private Dictionary<long, bool> copilotAssigning = new();
+
+    // Edit issue-related fields
+    private bool ShowEditIssueModal = false;
+    private bool isEditingIssue = false;
+    private string editIssueTitle = string.Empty;
+    private string editIssueBody = string.Empty;
+    private string? editErrorMessage = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -781,6 +848,60 @@ MCP_JSON_END -->";
         availableAssignees.Clear();
         selectedAssignees.Clear();
         agentAssignmentWarning = null;
+        StateHasChanged();
+    }
+
+    private void ShowEditModal(GitHubIssue issue)
+    {
+        selectedIssue = issue;
+        editIssueTitle = issue.Title;
+        editIssueBody = issue.Body ?? string.Empty;
+        editErrorMessage = null;
+        ShowEditIssueModal = true;
+        StateHasChanged();
+    }
+
+    private async Task SaveEditedIssue()
+    {
+        if (selectedIssue == null || string.IsNullOrWhiteSpace(editIssueTitle))
+            return;
+
+        isEditingIssue = true;
+        editErrorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var updatedIssue = await GitHubService.UpdateIssueAsync(Owner, Repo, selectedIssue.Number, editIssueTitle, editIssueBody);
+            
+            // Update the issue in the list
+            var index = issues.FindIndex(i => i.Number == selectedIssue.Number);
+            if (index >= 0)
+            {
+                issues[index] = updatedIssue;
+            }
+            
+            CloseEditModal();
+        }
+        catch (Exception ex)
+        {
+            editErrorMessage = $"Failed to update issue: {ex.Message}";
+            Console.WriteLine($"Error updating issue: {ex.Message}");
+        }
+        finally
+        {
+            isEditingIssue = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseEditModal()
+    {
+        ShowEditIssueModal = false;
+        selectedIssue = null;
+        editIssueTitle = string.Empty;
+        editIssueBody = string.Empty;
+        editErrorMessage = null;
         StateHasChanged();
     }
 
