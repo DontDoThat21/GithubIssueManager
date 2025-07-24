@@ -1,0 +1,636 @@
+@page "/management"
+@using GitHubIssueManager.Maui.Models
+@using GitHubIssueManager.Maui.Services
+@inject GitHubService GitHubService
+@inject RepositoryService RepositoryService
+@inject AuthenticationService AuthService
+@rendermode InteractiveServer
+
+<PageTitle>Management - GitHub Issue Manager</PageTitle>
+
+<!-- Management Header Card -->
+<MudPaper Elevation="2" Class="pa-4 mb-4" Style="background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);">
+    <MudStack Spacing="1">
+        <MudBreadcrumbs Separator="@Icons.Material.Filled.ChevronRight">
+            <MudBreadcrumbItem Href="/">Home</MudBreadcrumbItem>
+            <MudBreadcrumbItem Href="/management" Disabled="true">Management</MudBreadcrumbItem>
+        </MudBreadcrumbs>
+        <MudDivider />
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.ManageAccounts" Color="Color.Primary" Size="Size.Large" />
+            <MudText Typo="Typo.h4" Color="Color.Default">Repository & Issue Management</MudText>
+        </MudStack>
+        <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-1">
+            Centralized management for your watched repositories, issues, and system configuration.
+        </MudText>
+    </MudStack>
+</MudPaper>
+
+@if (!AuthService.IsAuthenticated)
+{
+    <MudAlert Severity="Severity.Warning" Class="mb-4">
+        <MudText Typo="Typo.h6" Class="mb-2">Authentication Required</MudText>
+        <MudText>
+            Please configure your GitHub token in the 
+            <MudLink Href="/settings" Color="Color.Primary">Settings</MudLink> 
+            page to access management features.
+        </MudText>
+        <MudStack Row="true" Spacing="2" Class="mt-3">
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       StartIcon="@Icons.Material.Filled.Settings"
+                       Href="/settings">
+                Configure Token
+            </MudButton>
+        </MudStack>
+    </MudAlert>
+}
+else
+{
+    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+        <!-- Repository Management Tab -->
+        <MudTabPanel Text="Repository Management" Icon="@Icons.Material.Filled.Folder">
+            <MudStack Spacing="4">
+                <!-- Watched Repositories Section -->
+                <MudCard>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@Icons.Material.Filled.Visibility" Color="Color.Primary" />
+                                <MudText Typo="Typo.h6">Watched Repositories</MudText>
+                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Text="@watchedRepos.Count().ToString()" />
+                            </MudStack>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudButton StartIcon="@Icons.Material.Filled.Refresh" 
+                                       Color="Color.Primary" 
+                                       Variant="Variant.Text"
+                                       OnClick="RefreshRepositories"
+                                       Disabled="@isRefreshing">
+                                @if (isRefreshing)
+                                {
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                }
+                                else
+                                {
+                                    <span>Refresh</span>
+                                }
+                            </MudButton>
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        @if (watchedRepos.Any())
+                        {
+                            <MudStack Spacing="2">
+                                @foreach (var repo in watchedRepos)
+                                {
+                                    <MudPaper Elevation="1" Class="pa-3">
+                                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                            <MudStack Spacing="1">
+                                                <MudText Typo="Typo.h6">
+                                                    <MudLink Href="@repo.HtmlUrl" Target="_blank" Color="Color.Primary">
+                                                        @repo.FullName
+                                                    </MudLink>
+                                                </MudText>
+                                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                                    @repo.Description
+                                                </MudText>
+                                                <MudStack Row="true" Spacing="3" AlignItems="AlignItems.Center">
+                                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                                        <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Small" />
+                                                        <MudText Typo="Typo.caption">@repo.StargazersCount</MudText>
+                                                    </MudStack>
+                                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                                        <MudIcon Icon="@Icons.Material.Filled.BugReport" Color="Color.Error" Size="Size.Small" />
+                                                        <MudText Typo="Typo.caption">@repo.OpenIssuesCount issues</MudText>
+                                                    </MudStack>
+                                                    @if (!string.IsNullOrEmpty(repo.Language))
+                                                    {
+                                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                                            <MudIcon Icon="@Icons.Material.Filled.Code" Color="Color.Secondary" Size="Size.Small" />
+                                                            <MudText Typo="Typo.caption">@repo.Language</MudText>
+                                                        </MudStack>
+                                                    }
+                                                </MudStack>
+                                            </MudStack>
+                                            <MudStack Row="true" Spacing="1">
+                                                <MudButton Size="Size.Small" 
+                                                          Variant="Variant.Outlined" 
+                                                          Color="Color.Primary"
+                                                          StartIcon="@Icons.Material.Filled.BugReport"
+                                                          Href="@($"/issues/{repo.Owner.Login}/{repo.Name}")">
+                                                    Issues
+                                                </MudButton>
+                                                <MudButton Size="Size.Small" 
+                                                          Variant="Variant.Outlined" 
+                                                          Color="Color.Error"
+                                                          StartIcon="@Icons.Material.Filled.RemoveCircle"
+                                                          OnClick="() => RemoveRepository(repo)">
+                                                    Remove
+                                                </MudButton>
+                                            </MudStack>
+                                        </MudStack>
+                                    </MudPaper>
+                                }
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <MudStack AlignItems="AlignItems.Center" Class="py-8">
+                                <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Size="Size.Large" Color="Color.Secondary" />
+                                <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
+                                    No repositories in your watchlist yet.
+                                </MudText>
+                                <MudButton Variant="Variant.Filled" 
+                                          Color="Color.Primary" 
+                                          StartIcon="@Icons.Material.Filled.Add"
+                                          Href="/repositories">
+                                    Add Repositories
+                                </MudButton>
+                            </MudStack>
+                        }
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- Bulk Operations Section -->
+                <MudCard>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@Icons.Material.Filled.DynamicForm" Color="Color.Secondary" />
+                                <MudText Typo="Typo.h6">Bulk Operations</MudText>
+                            </MudStack>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudPaper Elevation="1" Class="pa-4">
+                                    <MudStack Spacing="2">
+                                        <MudText Typo="Typo.h6">Repository Actions</MudText>
+                                        <MudButton Variant="Variant.Outlined" 
+                                                  Color="Color.Warning" 
+                                                  StartIcon="@Icons.Material.Filled.ClearAll"
+                                                  OnClick="() => showClearAllDialog = true"
+                                                  FullWidth="true">
+                                            Clear All Watchlist
+                                        </MudButton>
+                                        <MudButton Variant="Variant.Outlined" 
+                                                  Color="Color.Info" 
+                                                  StartIcon="@Icons.Material.Filled.CloudDownload"
+                                                  OnClick="ExportWatchlist"
+                                                  FullWidth="true">
+                                            Export Watchlist
+                                        </MudButton>
+                                    </MudStack>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudPaper Elevation="1" Class="pa-4">
+                                    <MudStack Spacing="2">
+                                        <MudText Typo="Typo.h6">Data Management</MudText>
+                                        <MudButton Variant="Variant.Outlined" 
+                                                  Color="Color.Primary" 
+                                                  StartIcon="@Icons.Material.Filled.Refresh"
+                                                  OnClick="RefreshAllData"
+                                                  Disabled="@isRefreshingAll"
+                                                  FullWidth="true">
+                                            @if (isRefreshingAll)
+                                            {
+                                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 0.5rem;" />
+                                            }
+                                            Refresh All Data
+                                        </MudButton>
+                                        <MudButton Variant="Variant.Outlined" 
+                                                  Color="Color.Secondary" 
+                                                  StartIcon="@Icons.Material.Filled.Settings"
+                                                  Href="/settings"
+                                                  FullWidth="true">
+                                            System Settings
+                                        </MudButton>
+                                    </MudStack>
+                                </MudPaper>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudStack>
+        </MudTabPanel>
+
+        <!-- Statistics & Insights Tab -->
+        <MudTabPanel Text="Statistics & Insights" Icon="@Icons.Material.Filled.Analytics">
+            <MudStack Spacing="4">
+                <!-- Overview Statistics -->
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudCard>
+                            <MudCardContent Class="text-center">
+                                <MudText Typo="Typo.h3" Color="Color.Primary">
+                                    @watchedRepos.Count()
+                                </MudText>
+                                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                                    Watched Repositories
+                                </MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudCard>
+                            <MudCardContent Class="text-center">
+                                <MudText Typo="Typo.h3" Color="Color.Warning">
+                                    @totalOpenIssues
+                                </MudText>
+                                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                                    Total Open Issues
+                                </MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudCard>
+                            <MudCardContent Class="text-center">
+                                <MudText Typo="Typo.h3" Color="Color.Info">
+                                    @totalStars
+                                </MudText>
+                                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                                    Total Stars
+                                </MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudCard>
+                            <MudCardContent Class="text-center">
+                                <MudText Typo="Typo.h3" Color="Color.Success">
+                                    @uniqueLanguages.Count
+                                </MudText>
+                                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                                    Languages Used
+                                </MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+
+                <!-- Repository Insights -->
+                <MudCard>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Repository Insights</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        @if (watchedRepos.Any())
+                        {
+                            <MudGrid>
+                                <MudItem xs="12" md="6">
+                                    <MudText Typo="Typo.subtitle1" Class="mb-3">Most Active Repositories (by Issues)</MudText>
+                                    @foreach (var repo in watchedRepos.OrderByDescending(r => r.OpenIssuesCount).Take(5))
+                                    {
+                                        <MudPaper Elevation="1" Class="pa-2 mb-2">
+                                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                                <MudText Typo="Typo.body2">@repo.Name</MudText>
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Text="@($"{repo.OpenIssuesCount} issues")" />
+                                            </MudStack>
+                                        </MudPaper>
+                                    }
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudText Typo="Typo.subtitle1" Class="mb-3">Most Popular Repositories (by Stars)</MudText>
+                                    @foreach (var repo in watchedRepos.OrderByDescending(r => r.StargazersCount).Take(5))
+                                    {
+                                        <MudPaper Elevation="1" Class="pa-2 mb-2">
+                                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                                <MudText Typo="Typo.body2">@repo.Name</MudText>
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Text="@($"? {repo.StargazersCount}")" />
+                                            </MudStack>
+                                        </MudPaper>
+                                    }
+                                </MudItem>
+                            </MudGrid>
+                            
+                            <!-- Language Distribution -->
+                            @if (uniqueLanguages.Any())
+                            {
+                                <MudDivider Class="my-4" />
+                                <MudText Typo="Typo.subtitle1" Class="mb-3">Programming Languages</MudText>
+                                <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                                    @foreach (var language in uniqueLanguages.Take(10))
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Text="@language" />
+                                    }
+                                </MudStack>
+                            }
+                        }
+                        else
+                        {
+                            <MudStack AlignItems="AlignItems.Center" Class="py-4">
+                                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                                    No data available. Add repositories to your watchlist to see insights.
+                                </MudText>
+                            </MudStack>
+                        }
+                    </MudCardContent>
+                </MudCard>
+            </MudStack>
+        </MudTabPanel>
+
+        <!-- System Status Tab -->
+        <MudTabPanel Text="System Status" Icon="@Icons.Material.Filled.HealthAndSafety">
+            <MudStack Spacing="4">
+                <!-- Authentication Status -->
+                <MudCard>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Authentication Status</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@(AuthService.IsAuthenticated ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" 
+                                     Color="@(AuthService.IsAuthenticated ? Color.Success : Color.Error)" />
+                            <MudText Typo="Typo.body1">
+                                @(AuthService.IsAuthenticated ? "GitHub Token Configured" : "GitHub Token Not Configured")
+                            </MudText>
+                        </MudStack>
+                        @if (!AuthService.IsAuthenticated)
+                        {
+                            <MudButton Variant="Variant.Filled" 
+                                       Color="Color.Primary" 
+                                       StartIcon="@Icons.Material.Filled.Settings"
+                                       Href="/settings"
+                                       Class="mt-3">
+                                Configure Token
+                            </MudButton>
+                        }
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- GitHub API Status -->
+                <MudCard>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">GitHub API Connectivity</MudText>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudButton StartIcon="@Icons.Material.Filled.Refresh" 
+                                       Color="Color.Primary" 
+                                       Variant="Variant.Text"
+                                       OnClick="CheckApiStatus"
+                                       Disabled="@isCheckingApi">
+                                @if (isCheckingApi)
+                                {
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                }
+                                else
+                                {
+                                    <span>Test Connection</span>
+                                }
+                            </MudButton>
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            @if (apiStatus == null)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.QuestionMark" Color="Color.Info" />
+                                <MudText Typo="Typo.body1">API status unknown - click "Test Connection" to check</MudText>
+                            }
+                            else if (apiStatus == true)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+                                <MudText Typo="Typo.body1">GitHub API is accessible</MudText>
+                            }
+                            else
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" />
+                                <MudText Typo="Typo.body1">GitHub API is not accessible</MudText>
+                            }
+                        </MudStack>
+                        @if (!string.IsNullOrEmpty(apiErrorMessage))
+                        {
+                            <MudAlert Severity="Severity.Error" Class="mt-3" Dense="true">
+                                <MudText Typo="Typo.body2">@apiErrorMessage</MudText>
+                            </MudAlert>
+                        }
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- Application Information -->
+                <MudCard>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Application Information</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">Application Version</MudText>
+                                <MudText Typo="Typo.body1">GitHub Issue Manager v1.0</MudText>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">Framework</MudText>
+                                <MudText Typo="Typo.body1">.NET 8 Blazor Server</MudText>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">Last Updated</MudText>
+                                <MudText Typo="Typo.body1">@DateTime.UtcNow.ToString("MMM dd, yyyy")</MudText>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">UI Framework</MudText>
+                                <MudText Typo="Typo.body1">MudBlazor</MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudStack>
+        </MudTabPanel>
+    </MudTabs>
+}
+
+<!-- Clear All Confirmation Dialog -->
+<MudDialog @bind-Visible="showClearAllDialog" Options="@(new DialogOptions { MaxWidth = MaxWidth.Small })">
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Large" />
+                <MudText Typo="Typo.h6">Clear All Watched Repositories</MudText>
+            </MudStack>
+            <MudText Typo="Typo.body1">
+                Are you sure you want to remove all repositories from your watchlist? This action cannot be undone.
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                This will remove <strong>@watchedRepos.Count()</strong> repositories from your watchlist.
+            </MudText>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => showClearAllDialog = false" Variant="Variant.Text">
+            Cancel
+        </MudButton>
+        <MudButton OnClick="ClearAllRepositories" 
+                   Variant="Variant.Filled" 
+                   Color="Color.Warning"
+                   StartIcon="@Icons.Material.Filled.ClearAll">
+            Clear All
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private IEnumerable<GitHubRepository> watchedRepos = new List<GitHubRepository>();
+    private bool isRefreshing = false;
+    private bool isRefreshingAll = false;
+    private bool isCheckingApi = false;
+    private bool showClearAllDialog = false;
+    private bool? apiStatus = null;
+    private string? apiErrorMessage = null;
+
+    // Statistics
+    private int totalOpenIssues => watchedRepos.Sum(r => r.OpenIssuesCount);
+    private int totalStars => watchedRepos.Sum(r => r.StargazersCount);
+    private HashSet<string> uniqueLanguages => watchedRepos
+        .Where(r => !string.IsNullOrEmpty(r.Language))
+        .Select(r => r.Language!)
+        .ToHashSet();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService.IsAuthenticated)
+        {
+            GitHubService.SetAuthentication(AuthService.CurrentToken!);
+        }
+        LoadWatchedRepositories();
+    }
+
+    private void LoadWatchedRepositories()
+    {
+        watchedRepos = RepositoryService.GetWatchedRepositories();
+        StateHasChanged();
+    }
+
+    private async Task RefreshRepositories()
+    {
+        isRefreshing = true;
+        StateHasChanged();
+
+        try
+        {
+            // Refresh repository data from GitHub API
+            var updatedRepos = new List<GitHubRepository>();
+            foreach (var repo in watchedRepos)
+            {
+                try
+                {
+                    var updatedRepo = await GitHubService.GetRepositoryAsync(repo.Owner.Login, repo.Name);
+                    updatedRepos.Add(updatedRepo);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error refreshing repository {repo.FullName}: {ex.Message}");
+                    // Keep the original repo if refresh fails
+                    updatedRepos.Add(repo);
+                }
+            }
+
+            // Update the watched repositories with fresh data
+            foreach (var updatedRepo in updatedRepos)
+            {
+                RepositoryService.RemoveRepository(updatedRepo.Id);
+                RepositoryService.AddRepository(updatedRepo);
+            }
+
+            LoadWatchedRepositories();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during repository refresh: {ex.Message}");
+        }
+        finally
+        {
+            isRefreshing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RefreshAllData()
+    {
+        isRefreshingAll = true;
+        StateHasChanged();
+
+        try
+        {
+            await RefreshRepositories();
+            await CheckApiStatus();
+        }
+        finally
+        {
+            isRefreshingAll = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CheckApiStatus()
+    {
+        if (!AuthService.IsAuthenticated) return;
+
+        isCheckingApi = true;
+        apiStatus = null;
+        apiErrorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            // Test API connectivity by making a simple request
+            await GitHubService.GetUserAsync();
+            apiStatus = true;
+        }
+        catch (Exception ex)
+        {
+            apiStatus = false;
+            apiErrorMessage = ex.Message;
+        }
+        finally
+        {
+            isCheckingApi = false;
+            StateHasChanged();
+        }
+    }
+
+    private void RemoveRepository(GitHubRepository repository)
+    {
+        RepositoryService.RemoveRepository(repository.Id);
+        LoadWatchedRepositories();
+    }
+
+    private void ClearAllRepositories()
+    {
+        foreach (var repo in watchedRepos.ToList())
+        {
+            RepositoryService.RemoveRepository(repo.Id);
+        }
+        LoadWatchedRepositories();
+        showClearAllDialog = false;
+    }
+
+    private void ExportWatchlist()
+    {
+        try
+        {
+            var exportData = System.Text.Json.JsonSerializer.Serialize(watchedRepos, new System.Text.Json.JsonSerializerOptions 
+            { 
+                WriteIndented = true 
+            });
+            
+            // In a real implementation, you would trigger a file download
+            // For now, we'll just log it to console
+            Console.WriteLine("Watchlist Export:");
+            Console.WriteLine(exportData);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error exporting watchlist: {ex.Message}");
+        }
+    }
+}

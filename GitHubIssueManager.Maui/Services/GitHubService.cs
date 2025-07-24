@@ -280,6 +280,27 @@ public class GitHubService
         }
     }
 
+    public async Task<GitHubUser> GetUserAsync()
+    {
+        try
+        {
+            var user = await _client.User.Current();
+            return new GitHubUser
+            {
+                Id = user.Id,
+                Login = user.Login,
+                AvatarUrl = user.AvatarUrl ?? string.Empty,
+                HtmlUrl = user.HtmlUrl ?? string.Empty,
+                Type = user.Type.ToString()
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching current user");
+            throw;
+        }
+    }
+
     private static GitHubRepository MapToGitHubRepository(Repository repo)
     {
         return new GitHubRepository
