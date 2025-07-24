@@ -1,0 +1,100 @@
+@using GitHubIssueManager.Maui.Models
+@using MudBlazor
+
+<MudPaper Elevation="1" Class="pa-3 mb-4">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudCheckBox @bind-Value="@AllSelected" 
+                         Indeterminate="@(SelectedIssues.Count > 0 && SelectedIssues.Count < TotalIssues)"
+                         Color="Color.Primary"
+                         TriState="true" />
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                @if (SelectedIssues.Count == 0)
+                {
+                    <text>Select issues for bulk operations</text>
+                }
+                else
+                {
+                    <text>@SelectedIssues.Count of @TotalIssues issues selected</text>
+                }
+            </MudText>
+        </MudStack>
+
+        @if (SelectedIssues.Count > 0)
+        {
+            <MudStack Row="true" Spacing="2">
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert" 
+                         Label="Bulk Actions" 
+                         Variant="Variant.Outlined" 
+                         Size="Size.Small"
+                         AnchorOrigin="Origin.BottomLeft">
+                    <MudMenuItem OnClick="() => OnBulkAction.InvokeAsync(BulkOperationType.Close)"
+                                 Icon="@Icons.Material.Filled.Close">
+                        Close Issues
+                    </MudMenuItem>
+                    <MudMenuItem OnClick="() => OnBulkAction.InvokeAsync(BulkOperationType.Reopen)"
+                                 Icon="@Icons.Material.Filled.Restore">
+                        Reopen Issues
+                    </MudMenuItem>
+                    <MudDivider />
+                    <MudMenuItem OnClick="() => OnBulkAction.InvokeAsync(BulkOperationType.Assign)"
+                                 Icon="@Icons.Material.Filled.PersonAdd">
+                        Assign Issues
+                    </MudMenuItem>
+                    <MudMenuItem OnClick="() => OnBulkAction.InvokeAsync(BulkOperationType.AddLabel)"
+                                 Icon="@Icons.Material.Filled.Label">
+                        Add Label
+                    </MudMenuItem>
+                    <MudMenuItem OnClick="() => OnBulkAction.InvokeAsync(BulkOperationType.SetMilestone)"
+                                 Icon="@Icons.Material.Filled.Flag">
+                        Set Milestone
+                    </MudMenuItem>
+                    <MudDivider />
+                    <MudMenuItem OnClick="() => OnBulkAction.InvokeAsync(BulkOperationType.Export)"
+                                 Icon="@Icons.Material.Filled.Download">
+                        Export Selected
+                    </MudMenuItem>
+                </MudMenu>
+                
+                <MudButton Variant="Variant.Text" 
+                           Size="Size.Small"
+                           OnClick="ClearSelection"
+                           StartIcon="@Icons.Material.Filled.Clear">
+                    Clear Selection
+                </MudButton>
+            </MudStack>
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public HashSet<long> SelectedIssues { get; set; } = new();
+    [Parameter] public int TotalIssues { get; set; }
+    [Parameter] public EventCallback<HashSet<long>> OnSelectionChanged { get; set; }
+    [Parameter] public EventCallback<BulkOperationType> OnBulkAction { get; set; }
+
+    private bool AllSelected
+    {
+        get => SelectedIssues.Count == TotalIssues && TotalIssues > 0;
+        set
+        {
+            if (value)
+            {
+                // Select all would need to be handled by parent component
+                OnSelectAll.InvokeAsync();
+            }
+            else
+            {
+                ClearSelection();
+            }
+        }
+    }
+
+    [Parameter] public EventCallback OnSelectAll { get; set; }
+
+    private async Task ClearSelection()
+    {
+        SelectedIssues.Clear();
+        await OnSelectionChanged.InvokeAsync(SelectedIssues);
+    }
+}

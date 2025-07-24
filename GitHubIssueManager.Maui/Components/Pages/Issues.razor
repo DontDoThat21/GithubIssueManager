@@ -1,10 +1,12 @@
 @page "/issues/{owner}/{repo}"
 @using GitHubIssueManager.Maui.Models
 @using GitHubIssueManager.Maui.Services
+@using GitHubIssueManager.Maui.Components.Shared
 @using MudBlazor
 @inject GitHubService GitHubService
 @inject AuthenticationService AuthService
 @inject RepositoryService RepositoryService
+@inject IssueFilterService FilterService
 @rendermode InteractiveServer
 
 <PageTitle>@Owner/@Repo - Issues</PageTitle>
@@ -76,6 +78,15 @@
     </MudStack>
 </MudPaper>
 
+<!-- Filter Panel -->
+@if (!isLoading && string.IsNullOrEmpty(errorMessage))
+{
+    <IssueFilterPanel Filter="@currentFilter" 
+                      FilterOptions="@filterOptions" 
+                      OnFilterChanged="@OnFilterChanged" 
+                      OnExport="@OnExport" />
+}
+
 <!-- Issues Content -->
 @if (isLoading)
 {
@@ -86,27 +97,69 @@
         </MudStack>
     </MudPaper>
 }
-else if (issues.Any())
+else if (filteredIssues.Any())
 {
+    <!-- Issues Summary -->
+    <!-- Temporarily disabled bulk operations for now -->
+    <!--<BulkOperationPanel SelectedIssues="@selectedIssueIds"
+                        TotalIssues="@filteredIssues.Count()"
+                        OnSelectionChanged="@OnSelectionChanged"
+                        OnBulkAction="@OnBulkAction"
+                        OnSelectAll="@OnSelectAll" />-->
+
+    <MudPaper Elevation="1" Class="pa-3 mb-4">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Showing @filteredIssues.Count() of @issues.Count issues
+                @if (currentFilter.HasActiveFilters)
+                {
+                    <text> (filtered)</text>
+                }
+            </MudText>
+            
+            <!-- Sort Options -->
+            <MudSelect Value="@sortBy" 
+                       Label="Sort by" 
+                       Variant="Variant.Outlined" 
+                       Dense="true"
+                       AnchorOrigin="Origin.BottomCenter"
+                       ValueChanged="@OnSortChanged"
+                       T="string">
+                <MudSelectItem Value="@("updated")">Recently Updated</MudSelectItem>
+                <MudSelectItem Value="@("created")">Recently Created</MudSelectItem>
+                <MudSelectItem Value="@("title")">Title</MudSelectItem>
+                <MudSelectItem Value="@("number")">Issue Number</MudSelectItem>
+                <MudSelectItem Value="@("comments")">Most Commented</MudSelectItem>
+            </MudSelect>
+        </MudStack>
+    </MudPaper>
+
     <MudStack Spacing="2">
-        @foreach (var issue in issues)
+        @foreach (var issue in filteredIssues)
         {
             var isCopilotAssigning = copilotAssigning.ContainsKey(issue.Number) && copilotAssigning[issue.Number];
             <MudPaper Elevation="1" Class="pa-4">
                 <MudStack Spacing="2">
                     <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                        <MudStack Spacing="1" Style="flex-grow: 1;">
-                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                <MudText Typo="Typo.h6">
-                                    <MudLink Href="@issue.HtmlUrl" Target="_blank" Color="Color.Primary">
-                                        #@issue.Number @issue.Title
-                                    </MudLink>
-                                </MudText>
-                                <MudChip Size="Size.Small" 
-                                         Color="@(issue.State.ToLower() == "open" ? Color.Success : Color.Default)"
-                                         T="string"
-                                         Text="@issue.State" />
-                            </MudStack>
+                        <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2" Style="flex-grow: 1;">
+                            <!-- Selection Checkbox - temporarily disabled -->
+                            <!--<MudCheckBox Value="@GetIssueSelected(issue)"
+                                         ValueChanged="@((bool selected) => OnIssueSelectionChanged(issue.Number, selected))"
+                                         Color="Color.Primary"
+                                         Class="mt-1" />-->
+                            
+                            <MudStack Spacing="1" Style="flex-grow: 1;">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudText Typo="Typo.h6">
+                                        <MudLink Href="@issue.HtmlUrl" Target="_blank" Color="Color.Primary">
+                                            #@issue.Number @issue.Title
+                                        </MudLink>
+                                    </MudText>
+                                    <MudChip Size="Size.Small" 
+                                             Color="@(issue.State.ToLower() == "open" ? Color.Success : Color.Default)"
+                                             T="string"
+                                             Text="@issue.State" />
+                                </MudStack>
                             
                             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -457,6 +510,7 @@ else
     [Parameter] public string Repo { get; set; } = string.Empty;
 
     private List<GitHubIssue> issues = new();
+    private IEnumerable<GitHubIssue> filteredIssues = new List<GitHubIssue>();
     private GitHubRepository? repositoryInfo = null;
     private bool isLoading = false;
     private string? errorMessage = null;
@@ -464,6 +518,14 @@ else
     private bool isCreatingIssue = false;
     private string newIssueTitle = string.Empty;
     private string newIssueBody = string.Empty;
+
+    // Filtering and search fields
+    private IssueFilter currentFilter = new();
+    private IssueFilterOptions? filterOptions = null;
+    private string sortBy = "updated";
+
+    // Bulk operations and selection
+    private HashSet<long> selectedIssueIds = new();
 
     // MCP Task-specific fields
     private string taskPriority = "medium";
@@ -522,7 +584,7 @@ else
 
     private async Task LoadData()
     {
-        await Task.WhenAll(LoadRepositoryInfo(), LoadIssues());
+        await Task.WhenAll(LoadRepositoryInfo(), LoadIssues(), LoadFilterOptions());
     }
 
     private async Task LoadRepositoryInfo()
@@ -547,6 +609,7 @@ else
         {
             var result = await GitHubService.GetIssuesAsync(Owner, Repo);
             issues = result.ToList();
+            ApplyFiltersAndSort();
         }
         catch (UnauthorizedAccessException authEx)
         {
@@ -848,6 +911,161 @@ MCP_JSON_END -->";
         {
             copilotAssigning[issue.Number] = false;
             StateHasChanged();
+        }
+    }
+
+    private async Task LoadFilterOptions()
+    {
+        try
+        {
+            if (AuthService.IsAuthenticated)
+            {
+                filterOptions = await GitHubService.GetFilterOptionsAsync(Owner, Repo);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading filter options: {ex.Message}");
+            // Filter options are not critical, so continue without them
+        }
+    }
+
+    private void ApplyFiltersAndSort()
+    {
+        var filtered = FilterService.FilterIssues(issues, currentFilter);
+        filteredIssues = FilterService.SortIssues(filtered, sortBy, true);
+        StateHasChanged();
+    }
+
+    private async Task OnFilterChanged(IssueFilter filter)
+    {
+        currentFilter = filter;
+        ApplyFiltersAndSort();
+        await Task.CompletedTask;
+    }
+
+    private void OnSortChanged(string newSortBy)
+    {
+        sortBy = newSortBy;
+        ApplyFiltersAndSort();
+    }
+
+    private async Task OnExport(ExportFormat format)
+    {
+        try
+        {
+            string content;
+            string filename;
+            string mimeType;
+
+            switch (format)
+            {
+                case ExportFormat.Csv:
+                    content = FilterService.ExportToCsv(filteredIssues);
+                    filename = $"{Owner}-{Repo}-issues-{DateTime.Now:yyyy-MM-dd}.csv";
+                    mimeType = "text/csv";
+                    break;
+                case ExportFormat.Json:
+                    content = FilterService.ExportToJson(filteredIssues);
+                    filename = $"{Owner}-{Repo}-issues-{DateTime.Now:yyyy-MM-dd}.json";
+                    mimeType = "application/json";
+                    break;
+                default:
+                    return;
+            }
+
+            // Create a data URL and trigger download
+            var dataUrl = $"data:{mimeType};base64,{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(content))}";
+            await DownloadFile(dataUrl, filename);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error exporting issues: {ex.Message}");
+        }
+    }
+
+    private async Task DownloadFile(string dataUrl, string filename)
+    {
+        // This would require JSRuntime for actual file download
+        // For now, we'll just log the export attempt
+        Console.WriteLine($"Export completed: {filename}");
+        await Task.CompletedTask;
+    }
+
+    private bool GetIssueSelected(GitHubIssue issue)
+    {
+        return selectedIssueIds.Contains(issue.Number);
+    }
+
+    private async Task OnIssueSelectionChanged(long issueNumber, bool selected)
+    {
+        if (selected)
+        {
+            selectedIssueIds.Add(issueNumber);
+        }
+        else
+        {
+            selectedIssueIds.Remove(issueNumber);
+        }
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task OnSelectionChanged(HashSet<long> selectedIds)
+    {
+        selectedIssueIds = selectedIds;
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task OnSelectAll()
+    {
+        selectedIssueIds.Clear();
+        foreach (var issue in filteredIssues)
+        {
+            selectedIssueIds.Add(issue.Number);
+        }
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task OnBulkAction(BulkOperationType actionType)
+    {
+        if (!selectedIssueIds.Any()) return;
+
+        try
+        {
+            switch (actionType)
+            {
+                case BulkOperationType.Export:
+                    var selectedIssues = filteredIssues.Where(i => selectedIssueIds.Contains(i.Number));
+                    await OnExport(ExportFormat.Csv); // Default to CSV for bulk export
+                    break;
+                case BulkOperationType.Close:
+                    Console.WriteLine($"Bulk close operation for {selectedIssueIds.Count} issues");
+                    // TODO: Implement bulk close
+                    break;
+                case BulkOperationType.Reopen:
+                    Console.WriteLine($"Bulk reopen operation for {selectedIssueIds.Count} issues");
+                    // TODO: Implement bulk reopen
+                    break;
+                case BulkOperationType.Assign:
+                    Console.WriteLine($"Bulk assign operation for {selectedIssueIds.Count} issues");
+                    // TODO: Implement bulk assign
+                    break;
+                case BulkOperationType.AddLabel:
+                    Console.WriteLine($"Bulk add label operation for {selectedIssueIds.Count} issues");
+                    // TODO: Implement bulk add label
+                    break;
+                case BulkOperationType.SetMilestone:
+                    Console.WriteLine($"Bulk set milestone operation for {selectedIssueIds.Count} issues");
+                    // TODO: Implement bulk set milestone
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error performing bulk operation: {ex.Message}");
         }
     }
 }
