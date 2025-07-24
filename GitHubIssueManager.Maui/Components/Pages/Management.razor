@@ -1,9 +1,10 @@
-@page "/management"
+﻿@page "/management"
 @using GitHubIssueManager.Maui.Models
 @using GitHubIssueManager.Maui.Services
 @inject GitHubService GitHubService
 @inject RepositoryService RepositoryService
 @inject AuthenticationService AuthService
+@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
 <PageTitle>Management - GitHub Issue Manager</PageTitle>
@@ -164,7 +165,7 @@ else
                     </MudCardHeader>
                     <MudCardContent>
                         <MudGrid>
-                            <MudItem xs="12" md="6">
+                            <MudItem xs="12" md="4">
                                 <MudPaper Elevation="1" Class="pa-4">
                                     <MudStack Spacing="2">
                                         <MudText Typo="Typo.h6">Repository Actions</MudText>
@@ -172,20 +173,55 @@ else
                                                   Color="Color.Warning" 
                                                   StartIcon="@Icons.Material.Filled.ClearAll"
                                                   OnClick="() => showClearAllDialog = true"
-                                                  FullWidth="true">
+                                                  FullWidth="true"
+                                                  Size="Size.Small">
                                             Clear All Watchlist
                                         </MudButton>
                                         <MudButton Variant="Variant.Outlined" 
                                                   Color="Color.Info" 
                                                   StartIcon="@Icons.Material.Filled.CloudDownload"
                                                   OnClick="ExportWatchlist"
-                                                  FullWidth="true">
+                                                  FullWidth="true"
+                                                  Size="Size.Small">
                                             Export Watchlist
                                         </MudButton>
                                     </MudStack>
                                 </MudPaper>
                             </MudItem>
-                            <MudItem xs="12" md="6">
+                            <MudItem xs="12" md="4">
+                                <MudPaper Elevation="1" Class="pa-4">
+                                    <MudStack Spacing="2">
+                                        <MudText Typo="Typo.h6">Copy Git URLs</MudText>
+                                        <MudButton Variant="Variant.Outlined" 
+                                                  Color="Color.Success" 
+                                                  StartIcon="@Icons.Material.Filled.ContentCopy"
+                                                  OnClick="CopyAllGitUrls"
+                                                  Disabled="@isCopyingAllUrls"
+                                                  FullWidth="true"
+                                                  Size="Size.Small">
+                                            @if (isCopyingAllUrls)
+                                            {
+                                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 0.5rem;" />
+                                            }
+                                            Copy All Git URLs
+                                        </MudButton>
+                                        <MudButton Variant="Variant.Outlined" 
+                                                  Color="Color.Primary" 
+                                                  StartIcon="@Icons.Material.Filled.Visibility"
+                                                  OnClick="CopyWatchedGitUrls"
+                                                  Disabled="@isCopyingWatchedUrls"
+                                                  FullWidth="true"
+                                                  Size="Size.Small">
+                                            @if (isCopyingWatchedUrls)
+                                            {
+                                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 0.5rem;" />
+                                            }
+                                            Copy Watched Git URLs
+                                        </MudButton>
+                                    </MudStack>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
                                 <MudPaper Elevation="1" Class="pa-4">
                                     <MudStack Spacing="2">
                                         <MudText Typo="Typo.h6">Data Management</MudText>
@@ -194,7 +230,8 @@ else
                                                   StartIcon="@Icons.Material.Filled.Refresh"
                                                   OnClick="RefreshAllData"
                                                   Disabled="@isRefreshingAll"
-                                                  FullWidth="true">
+                                                  FullWidth="true"
+                                                  Size="Size.Small">
                                             @if (isRefreshingAll)
                                             {
                                                 <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 0.5rem;" />
@@ -205,7 +242,8 @@ else
                                                   Color="Color.Secondary" 
                                                   StartIcon="@Icons.Material.Filled.Settings"
                                                   Href="/settings"
-                                                  FullWidth="true">
+                                                  FullWidth="true"
+                                                  Size="Size.Small">
                                             System Settings
                                         </MudButton>
                                     </MudStack>
@@ -302,7 +340,7 @@ else
                                         <MudPaper Elevation="1" Class="pa-2 mb-2">
                                             <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                                                 <MudText Typo="Typo.body2">@repo.Name</MudText>
-                                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Text="@($"? {repo.StargazersCount}")" />
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Text="@($"⭐ {repo.StargazersCount}")" />
                                             </MudStack>
                                         </MudPaper>
                                     }
@@ -486,6 +524,9 @@ else
     private bool showClearAllDialog = false;
     private bool? apiStatus = null;
     private string? apiErrorMessage = null;
+    private bool isCopyingUrls = false;
+    private bool isCopyingAllUrls = false;
+    private bool isCopyingWatchedUrls = false;
 
     // Statistics
     private int totalOpenIssues => watchedRepos.Sum(r => r.OpenIssuesCount);
@@ -632,5 +673,76 @@ else
         {
             Console.WriteLine($"Error exporting watchlist: {ex.Message}");
         }
+    }
+
+    private async Task CopyAllGitUrls()
+    {
+        if (!AuthService.IsAuthenticated)
+            return;
+
+        isCopyingAllUrls = true;
+        StateHasChanged();
+
+        try
+        {
+            // Get all repositories from GitHub API
+            var allRepos = await GitHubService.GetRepositoriesAsync();
+            
+            var gitUrls = allRepos
+                .Select(repo => $"{repo.HtmlUrl}.git")
+                .ToList();
+            
+            var urlsText = string.Join(Environment.NewLine, gitUrls);
+            
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", urlsText);
+            
+            Console.WriteLine($"Copied {gitUrls.Count} git URLs (all repositories) to clipboard");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error copying all git URLs to clipboard: {ex.Message}");
+        }
+        finally
+        {
+            isCopyingAllUrls = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CopyWatchedGitUrls()
+    {
+        if (!watchedRepos.Any())
+            return;
+
+        isCopyingWatchedUrls = true;
+        StateHasChanged();
+
+        try
+        {
+            var gitUrls = watchedRepos
+                .Select(repo => $"{repo.HtmlUrl}.git")
+                .ToList();
+            
+            var urlsText = string.Join(Environment.NewLine, gitUrls);
+            
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", urlsText);
+            
+            Console.WriteLine($"Copied {gitUrls.Count} git URLs (watched repositories) to clipboard");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error copying watched git URLs to clipboard: {ex.Message}");
+        }
+        finally
+        {
+            isCopyingWatchedUrls = false;
+            StateHasChanged();
+        }
+    }
+
+    // Keep the old method for backward compatibility (though it's no longer used in the UI)
+    private async Task CopyGitUrls()
+    {
+        await CopyWatchedGitUrls();
     }
 }
