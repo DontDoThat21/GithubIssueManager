@@ -1,0 +1,328 @@
+@using GitHubIssueManager.Maui.Models
+@using GitHubIssueManager.Maui.Services
+@using MudBlazor
+@inject IssueFilterService FilterService
+
+<MudExpansionPanels Elevation="1" Class="mb-4">
+    <MudExpansionPanel Text="@GetFilterPanelTitle()" Icon="@Icons.Material.Filled.FilterList">
+        <MudStack Spacing="3" Class="pa-2">
+        
+            <!-- Search Text -->
+            <MudTextField @bind-Value="Filter.SearchText"
+                          Label="Search Issues"
+                          Placeholder="Search by title, description, author, or #issue-number..."
+                          Variant="Variant.Outlined"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          OnKeyPress="@OnSearchKeyPress"
+                          Clearable="true"
+                          FullWidth="true" />
+
+            <!-- Filter Grid -->
+            <MudGrid>
+                <!-- State Filter -->
+                <MudItem xs="12" sm="6" md="3">
+                    <MudSelect @bind-Value="Filter.State"
+                               Label="Status"
+                               Variant="Variant.Outlined"
+                               AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem Value="IssueState.All">All Issues</MudSelectItem>
+                        <MudSelectItem Value="IssueState.Open">Open</MudSelectItem>
+                        <MudSelectItem Value="IssueState.Closed">Closed</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+
+                <!-- Assignees Filter -->
+                <MudItem xs="12" sm="6" md="3">
+                    <MudSelect @bind-SelectedValues="SelectedAssignees"
+                               Label="Assignees"
+                               Variant="Variant.Outlined"
+                               MultiSelection="true"
+                               SelectAll="true"
+                               T="string"
+                               AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem Value="@("unassigned")">Unassigned</MudSelectItem>
+                        @if (FilterOptions?.Assignees != null)
+                        {
+                            @foreach (var assignee in FilterOptions.Assignees)
+                            {
+                                <MudSelectItem Value="@assignee.Login">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <MudAvatar Size="Size.Small" Src="@assignee.AvatarUrl" />
+                                        @assignee.Login
+                                    </div>
+                                </MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <!-- Labels Filter -->
+                <MudItem xs="12" sm="6" md="3">
+                    <MudSelect @bind-SelectedValues="SelectedLabels"
+                               Label="Labels"
+                               Variant="Variant.Outlined"
+                               MultiSelection="true"
+                               SelectAll="true"
+                               T="string"
+                               AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem Value="@("unlabeled")">Unlabeled</MudSelectItem>
+                        @if (FilterOptions?.Labels != null)
+                        {
+                            @foreach (var label in FilterOptions.Labels)
+                            {
+                                <MudSelectItem Value="@label.Name">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="width: 16px; height: 16px; border-radius: 50%; background-color: #@label.Color;"></div>
+                                        @label.Name
+                                    </div>
+                                </MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <!-- Milestones Filter -->
+                <MudItem xs="12" sm="6" md="3">
+                    <MudSelect @bind-SelectedValues="SelectedMilestones"
+                               Label="Milestones"
+                               Variant="Variant.Outlined"
+                               MultiSelection="true"
+                               SelectAll="true"
+                               T="string"
+                               AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem Value="@("no milestone")">No Milestone</MudSelectItem>
+                        @if (FilterOptions?.Milestones != null)
+                        {
+                            @foreach (var milestone in FilterOptions.Milestones)
+                            {
+                                <MudSelectItem Value="@milestone.Title">@milestone.Title</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+
+            <!-- Date Filters -->
+            <MudExpansionPanels Elevation="0">
+                <MudExpansionPanel Text="Date Filters" Icon="@Icons.Material.Filled.DateRange">
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudStack Spacing="2">
+                                <MudText Typo="Typo.subtitle2">Created Date</MudText>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudDatePicker @bind-Date="Filter.CreatedAfter"
+                                                   Label="After"
+                                                   Variant="Variant.Outlined"
+                                                   Clearable="true" />
+                                    <MudDatePicker @bind-Date="Filter.CreatedBefore"
+                                                   Label="Before"
+                                                   Variant="Variant.Outlined"
+                                                   Clearable="true" />
+                                </MudStack>
+                            </MudStack>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudStack Spacing="2">
+                                <MudText Typo="Typo.subtitle2">Updated Date</MudText>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudDatePicker @bind-Date="Filter.UpdatedAfter"
+                                                   Label="After"
+                                                   Variant="Variant.Outlined"
+                                                   Clearable="true" />
+                                    <MudDatePicker @bind-Date="Filter.UpdatedBefore"
+                                                   Label="Before"
+                                                   Variant="Variant.Outlined"
+                                                   Clearable="true" />
+                                </MudStack>
+                            </MudStack>
+                        </MudItem>
+                    </MudGrid>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+
+            <!-- Options -->
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                <MudCheckBox @bind-Value="Filter.IncludePullRequests"
+                             Label="Include Pull Requests"
+                             Color="Color.Primary" />
+            </MudStack>
+
+            <!-- Actions -->
+            <MudStack Row="true" Spacing="2" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudStack Row="true" Spacing="2">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Search"
+                               OnClick="ApplyFilters"
+                               Size="Size.Small">
+                        Apply Filters
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Secondary"
+                               StartIcon="@Icons.Material.Filled.Clear"
+                               OnClick="ClearFilters"
+                               Size="Size.Small">
+                        Clear All
+                    </MudButton>
+                </MudStack>
+                
+                <!-- Export Options -->
+                <MudMenu Icon="@Icons.Material.Filled.Download" 
+                         Label="Export" 
+                         Variant="Variant.Outlined" 
+                         Size="Size.Small"
+                         AnchorOrigin="Origin.BottomLeft">
+                    <MudMenuItem OnClick="() => OnExport.InvokeAsync(ExportFormat.Csv)"
+                                 Icon="@Icons.Material.Filled.TableView">
+                        Export as CSV
+                    </MudMenuItem>
+                    <MudMenuItem OnClick="() => OnExport.InvokeAsync(ExportFormat.Json)"
+                                 Icon="@Icons.Material.Filled.Code">
+                        Export as JSON
+                    </MudMenuItem>
+                </MudMenu>
+            </MudStack>
+        </MudStack>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+<!-- Active Filters Chips -->
+@if (Filter.HasActiveFilters)
+{
+    <MudPaper Elevation="1" Class="pa-3 mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Active Filters:</MudText>
+            
+            @if (!string.IsNullOrWhiteSpace(Filter.SearchText))
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Info" 
+                         OnClose="() => { Filter.SearchText = null; ApplyFilters(); }"
+                         Text="@($"Search: {Filter.SearchText}")" />
+            }
+            
+            @if (Filter.State != IssueState.All)
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary"
+                         OnClose="() => { Filter.State = IssueState.All; ApplyFilters(); }"
+                         Text="@($"Status: {Filter.State}")" />
+            }
+            
+            @foreach (var assignee in Filter.Assignees)
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Secondary"
+                         OnClose="() => RemoveAssigneeFilter(assignee)"
+                         Text="@($"Assignee: {assignee}")" />
+            }
+            
+            @foreach (var label in Filter.Labels)
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Success"
+                         OnClose="() => RemoveLabelFilter(label)"
+                         Text="@($"Label: {label}")" />
+            }
+            
+            @foreach (var milestone in Filter.Milestones)
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning"
+                         OnClose="() => RemoveMilestoneFilter(milestone)"
+                         Text="@($"Milestone: {milestone}")" />
+            }
+            
+            @if (Filter.CreatedAfter.HasValue || Filter.CreatedBefore.HasValue)
+            {
+                var dateRange = $"{Filter.CreatedAfter?.ToString("MM/dd/yyyy") ?? "..."} - {Filter.CreatedBefore?.ToString("MM/dd/yyyy") ?? "..."}";
+                <MudChip T="string" Size="Size.Small" Color="Color.Tertiary"
+                         OnClose="() => { Filter.CreatedAfter = null; Filter.CreatedBefore = null; ApplyFilters(); }"
+                         Text="@($"Created: {dateRange}")" />
+            }
+            
+            @if (Filter.UpdatedAfter.HasValue || Filter.UpdatedBefore.HasValue)
+            {
+                var dateRange = $"{Filter.UpdatedAfter?.ToString("MM/dd/yyyy") ?? "..."} - {Filter.UpdatedBefore?.ToString("MM/dd/yyyy") ?? "..."}";
+                <MudChip T="string" Size="Size.Small" Color="Color.Dark"
+                         OnClose="() => { Filter.UpdatedAfter = null; Filter.UpdatedBefore = null; ApplyFilters(); }"
+                         Text="@($"Updated: {dateRange}")" />
+            }
+            
+            @if (Filter.IncludePullRequests)
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Surface"
+                         OnClose="() => { Filter.IncludePullRequests = false; ApplyFilters(); }"
+                         Text="Include PRs" />
+            }
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public IssueFilter Filter { get; set; } = new();
+    [Parameter] public IssueFilterOptions? FilterOptions { get; set; }
+    [Parameter] public EventCallback<IssueFilter> OnFilterChanged { get; set; }
+    [Parameter] public EventCallback<ExportFormat> OnExport { get; set; }
+
+    private IEnumerable<string> SelectedAssignees
+    {
+        get => Filter.Assignees;
+        set => Filter.Assignees = value.ToList();
+    }
+
+    private IEnumerable<string> SelectedLabels
+    {
+        get => Filter.Labels;
+        set => Filter.Labels = value.ToList();
+    }
+
+    private IEnumerable<string> SelectedMilestones
+    {
+        get => Filter.Milestones;
+        set => Filter.Milestones = value.ToList();
+    }
+
+    private string GetFilterPanelTitle()
+    {
+        var title = "Filter & Search Issues";
+        if (Filter.HasActiveFilters)
+        {
+            title += $" ({Filter.ActiveFilterCount} active)";
+        }
+        return title;
+    }
+
+    private async Task ApplyFilters()
+    {
+        await OnFilterChanged.InvokeAsync(Filter);
+    }
+
+    private async Task ClearFilters()
+    {
+        Filter.Clear();
+        await ApplyFilters();
+    }
+
+    private async Task OnSearchKeyPress(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            await ApplyFilters();
+        }
+    }
+
+    private async Task RemoveAssigneeFilter(string assignee)
+    {
+        Filter.Assignees.Remove(assignee);
+        await ApplyFilters();
+    }
+
+    private async Task RemoveLabelFilter(string label)
+    {
+        Filter.Labels.Remove(label);
+        await ApplyFilters();
+    }
+
+    private async Task RemoveMilestoneFilter(string milestone)
+    {
+        Filter.Milestones.Remove(milestone);
+        await ApplyFilters();
+    }
+}

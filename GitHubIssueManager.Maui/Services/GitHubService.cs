@@ -371,6 +371,82 @@ public class GitHubService
         }
     }
 
+    public async Task<IEnumerable<GitHubLabel>> GetRepositoryLabelsAsync(string owner, string repo)
+    {
+        try
+        {
+            ValidateAuthentication();
+            var labels = await _client.Issue.Labels.GetAllForRepository(owner, repo);
+            return labels.Select(label => new GitHubLabel
+            {
+                Id = label.Id,
+                Name = label.Name,
+                Color = label.Color,
+                Description = label.Description,
+                IsDefault = label.Default
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching labels for {Owner}/{Repo}", owner, repo);
+            throw;
+        }
+    }
+
+    public async Task<IEnumerable<GitHubMilestone>> GetRepositoryMilestonesAsync(string owner, string repo)
+    {
+        try
+        {
+            ValidateAuthentication();
+            var milestones = await _client.Issue.Milestone.GetAllForRepository(owner, repo);
+            return milestones.Select(milestone => new GitHubMilestone
+            {
+                Id = milestone.Id,
+                Number = milestone.Number,
+                Title = milestone.Title,
+                Description = milestone.Description,
+                State = milestone.State.ToString(),
+                CreatedAt = milestone.CreatedAt.DateTime,
+                UpdatedAt = milestone.UpdatedAt?.DateTime ?? milestone.CreatedAt.DateTime,
+                DueOn = milestone.DueOn?.DateTime,
+                ClosedAt = milestone.ClosedAt?.DateTime
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching milestones for {Owner}/{Repo}", owner, repo);
+            throw;
+        }
+    }
+
+    public async Task<Models.IssueFilterOptions> GetFilterOptionsAsync(string owner, string repo)
+    {
+        try
+        {
+            ValidateAuthentication();
+            
+            var labelsTask = GetRepositoryLabelsAsync(owner, repo);
+            var milestonesTask = GetRepositoryMilestonesAsync(owner, repo);
+            var assigneesTask = GetAvailableAssigneesAsync(owner, repo);
+            var repositoryTask = GetRepositoryAsync(owner, repo);
+
+            await Task.WhenAll(labelsTask, milestonesTask, assigneesTask, repositoryTask);
+
+            return new Models.IssueFilterOptions
+            {
+                Labels = (await labelsTask).ToList(),
+                Milestones = (await milestonesTask).ToList(),
+                Assignees = (await assigneesTask).ToList(),
+                Repository = await repositoryTask
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching filter options for {Owner}/{Repo}", owner, repo);
+            throw;
+        }
+    }
+
     private void ValidateAuthentication()
     {
         if (_client.Credentials == null || string.IsNullOrWhiteSpace(_client.Credentials.Password))
