@@ -20,6 +20,7 @@ A cross-platform GitHub issue management application built with .NET 8 and Blazo
   - Filter and display issue details including labels, assignees, and milestones
 - **Modern UI**: Responsive Bootstrap-based interface with dark theme
 - **Local Data Persistence**: Watchlist and authentication data stored locally
+- **Toast Notifications**: Real-time feedback for user actions using Blazor Bootstrap Toasts
 
 ### 🚧 Planned Features (Future Phases)
 
@@ -194,6 +195,7 @@ Future phases will include:
 - **Microsoft.Extensions.Hosting** (8.0.0): Service hosting and DI
 - **System.Text.Json** (8.0.5): JSON serialization for local storage
 - **Microsoft.AspNetCore.Components.WebView.Maui**: For future MAUI integration
+- **Blazor Bootstrap Toasts**: Provides toast notifications for user feedback (https://demos.blazorbootstrap.com/toasts)
 
 ## 🗺️ Roadmap
 
