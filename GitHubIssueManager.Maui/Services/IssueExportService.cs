@@ -194,5 +194,5 @@ public class ExportStats
     public int ClosedIssues { get; set; }
     public int UniqueAssignees { get; set; }
     public int UniqueLabels { get; set; }
-    public object? DateRange { get; set; }
+    public DateRangeInfo? DateRange { get; set; }
 }
