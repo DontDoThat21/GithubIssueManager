@@ -5,6 +5,7 @@
 @inject GitHubService GitHubService
 @inject AuthenticationService AuthService
 @inject RepositoryService RepositoryService
+@inject IssueFilterService FilterService
 @rendermode InteractiveServer
 
 <PageTitle>@Owner/@Repo - Issues</PageTitle>
@@ -76,6 +77,20 @@
     </MudStack>
 </MudPaper>
 
+<!-- Advanced Filter Panel -->
+<IssueFilterPanel Owner="@Owner" 
+                  Repo="@Repo" 
+                  TotalCount="@allIssues.Count"
+                  FilteredCount="@filteredIssues.Count"
+                  OnFilterChanged="OnFilterChanged" />
+
+<!-- Bulk Operations Toolbar -->
+<BulkOperationsToolbar Owner="@Owner"
+                       Repo="@Repo"
+                       SelectedIssues="@selectedIssues"
+                       OnIssuesUpdated="OnBulkIssuesUpdated"
+                       OnSelectionCleared="ClearSelection" />
+
 <!-- Issues Content -->
 @if (isLoading)
 {
@@ -86,43 +101,52 @@
         </MudStack>
     </MudPaper>
 }
-else if (issues.Any())
+else if (filteredIssues.Any())
 {
     <MudStack Spacing="2">
-        @foreach (var issue in issues)
+        @foreach (var issue in filteredIssues)
         {
             var isCopilotAssigning = copilotAssigning.ContainsKey(issue.Number) && copilotAssigning[issue.Number];
-            <MudPaper Elevation="1" Class="pa-4">
+            var isSelected = selectedIssues.Any(s => s.Number == issue.Number);
+            
+            <MudPaper Elevation="1" Class="pa-4" Style="@(isSelected ? "border-left: 4px solid var(--mud-palette-primary);" : "")">
                 <MudStack Spacing="2">
                     <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                        <MudStack Spacing="1" Style="flex-grow: 1;">
-                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                <MudText Typo="Typo.h6">
-                                    <MudLink Href="@issue.HtmlUrl" Target="_blank" Color="Color.Primary">
-                                        #@issue.Number @issue.Title
-                                    </MudLink>
-                                </MudText>
-                                <MudChip Size="Size.Small" 
-                                         Color="@(issue.State.ToLower() == "open" ? Color.Success : Color.Default)"
-                                         T="string"
-                                         Text="@issue.State" />
-                            </MudStack>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <!-- Selection Checkbox -->
+                            <MudCheckBox @bind-Value="@isSelected"
+                                         Color="Color.Primary"
+                                         OnValueChanged="@((bool selected) => ToggleIssueSelection(issue, selected))" />
                             
-                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                    <MudAvatar Size="Size.Small" Src="@issue.User.AvatarUrl" />
-                                    <MudText Typo="Typo.body2" Color="Color.Secondary">@issue.User.Login</MudText>
+                            <MudStack Spacing="1" Style="flex-grow: 1;">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudText Typo="Typo.h6">
+                                        <MudLink Href="@issue.HtmlUrl" Target="_blank" Color="Color.Primary">
+                                            #@issue.Number @issue.Title
+                                        </MudLink>
+                                    </MudText>
+                                    <MudChip Size="Size.Small" 
+                                             Color="@(issue.State.ToLower() == "open" ? Color.Success : Color.Default)"
+                                             T="string"
+                                             Text="@issue.State" />
                                 </MudStack>
-                                <MudText Typo="Typo.body2" Color="Color.Secondary">
-                                    opened @issue.CreatedAt.ToString("MMM dd, yyyy")
-                                </MudText>
-                                @if (issue.CommentCount > 0)
-                                {
+                                
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                        <MudIcon Icon="@Icons.Material.Filled.Comment" Size="Size.Small" Color="Color.Secondary" />
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary">@issue.CommentCount</MudText>
+                                        <MudAvatar Size="Size.Small" Src="@issue.User.AvatarUrl" />
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary">@issue.User.Login</MudText>
                                     </MudStack>
-                                }
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                        opened @issue.CreatedAt.ToString("MMM dd, yyyy")
+                                    </MudText>
+                                    @if (issue.CommentCount > 0)
+                                    {
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                            <MudIcon Icon="@Icons.Material.Filled.Comment" Size="Size.Small" Color="Color.Secondary" />
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary">@issue.CommentCount</MudText>
+                                        </MudStack>
+                                    }
+                                </MudStack>
                             </MudStack>
                         </MudStack>
                         
@@ -516,7 +540,9 @@ else
     [Parameter] public string Owner { get; set; } = string.Empty;
     [Parameter] public string Repo { get; set; } = string.Empty;
 
-    private List<GitHubIssue> issues = new();
+    private List<GitHubIssue> allIssues = new();
+    private List<GitHubIssue> filteredIssues = new();
+    private List<GitHubIssue> selectedIssues = new();
     private GitHubRepository? repositoryInfo = null;
     private bool isLoading = false;
     private string? errorMessage = null;
@@ -560,6 +586,10 @@ else
         {
             GitHubService.SetAuthentication(AuthService.CurrentToken!);
         }
+        
+        // Subscribe to filter changes
+        FilterService.FilterChanged += OnFilterServiceChanged;
+        
         await LoadData();
     }
 
@@ -575,6 +605,28 @@ else
         {
             await LoadData();
         }
+    }
+
+    public void Dispose()
+    {
+        FilterService.FilterChanged -= OnFilterServiceChanged;
+    }
+
+    private void OnFilterServiceChanged(IssueFilter filter)
+    {
+        ApplyFilters();
+        StateHasChanged();
+    }
+
+    private void ApplyFilters()
+    {
+        filteredIssues = FilterService.ApplyFilter(allIssues).ToList();
+    }
+
+    private async Task OnFilterChanged()
+    {
+        ApplyFilters();
+        StateHasChanged();
     }
 
     private void SetupBreadcrumbs()
@@ -613,31 +665,37 @@ else
         try
         {
             var result = await GitHubService.GetIssuesAsync(Owner, Repo);
-            issues = result.ToList();
+            allIssues = result.ToList();
+            ApplyFilters();
         }
         catch (UnauthorizedAccessException authEx)
         {
-            issues = new List<GitHubIssue>();
+            allIssues = new List<GitHubIssue>();
+            filteredIssues = new List<GitHubIssue>();
             errorMessage = authEx.Message;
         }
         catch (ArgumentException argEx)
         {
-            issues = new List<GitHubIssue>();
+            allIssues = new List<GitHubIssue>();
+            filteredIssues = new List<GitHubIssue>();
             errorMessage = argEx.Message;
         }
         catch (TimeoutException timeoutEx)
         {
-            issues = new List<GitHubIssue>();
+            allIssues = new List<GitHubIssue>();
+            filteredIssues = new List<GitHubIssue>();
             errorMessage = timeoutEx.Message;
         }
         catch (InvalidOperationException opEx)
         {
-            issues = new List<GitHubIssue>();
+            allIssues = new List<GitHubIssue>();
+            filteredIssues = new List<GitHubIssue>();
             errorMessage = opEx.Message;
         }
         catch (Exception ex)
         {
-            issues = new List<GitHubIssue>();
+            allIssues = new List<GitHubIssue>();
+            filteredIssues = new List<GitHubIssue>();
             
             // Fallback for any other unexpected errors
             if (ex.Message.Contains("DNS") || ex.Message.Contains("proxy") || ex.Message.Contains("network"))
@@ -656,6 +714,43 @@ else
         }
     }
 
+    // Issue selection methods
+    private void ToggleIssueSelection(GitHubIssue issue, bool selected)
+    {
+        if (selected && !selectedIssues.Any(s => s.Number == issue.Number))
+        {
+            selectedIssues.Add(issue);
+        }
+        else if (!selected)
+        {
+            selectedIssues.RemoveAll(s => s.Number == issue.Number);
+        }
+        StateHasChanged();
+    }
+
+    private void ClearSelection()
+    {
+        selectedIssues.Clear();
+        StateHasChanged();
+    }
+
+    private async Task OnBulkIssuesUpdated(List<GitHubIssue> updatedIssues)
+    {
+        // Update the issues in our lists
+        foreach (var updatedIssue in updatedIssues)
+        {
+            var index = allIssues.FindIndex(i => i.Number == updatedIssue.Number);
+            if (index >= 0)
+            {
+                allIssues[index] = updatedIssue;
+            }
+        }
+
+        ApplyFilters();
+        ClearSelection();
+        StateHasChanged();
+    }
+
     private async Task CreateIssue()
     {
         if (string.IsNullOrWhiteSpace(newIssueTitle)) return;
@@ -667,7 +762,8 @@ else
         {
             var taskBody = GetFormattedIssueBody();
             var newIssue = await GitHubService.CreateIssueAsync(Owner, Repo, newIssueTitle, taskBody);
-            issues.Insert(0, newIssue);
+            allIssues.Insert(0, newIssue);
+            ApplyFilters();
             CloseCreateIssueModal();
         }
         catch (Exception ex)
@@ -822,10 +918,11 @@ MCP_JSON_END -->";
             var updatedIssue = await GitHubService.AssignIssueAsync(Owner, Repo, selectedIssue.Number, selectedUserLogins);
             
             // Update the issue in the list
-            var index = issues.FindIndex(i => i.Number == selectedIssue.Number);
+            var index = allIssues.FindIndex(i => i.Number == selectedIssue.Number);
             if (index >= 0)
             {
-                issues[index] = updatedIssue;
+                allIssues[index] = updatedIssue;
+                ApplyFilters();
             }
             
             CloseAssignModal();
@@ -875,10 +972,11 @@ MCP_JSON_END -->";
             var updatedIssue = await GitHubService.UpdateIssueAsync(Owner, Repo, selectedIssue.Number, editIssueTitle, editIssueBody);
             
             // Update the issue in the list
-            var index = issues.FindIndex(i => i.Number == selectedIssue.Number);
+            var index = allIssues.FindIndex(i => i.Number == selectedIssue.Number);
             if (index >= 0)
             {
-                issues[index] = updatedIssue;
+                allIssues[index] = updatedIssue;
+                ApplyFilters();
             }
             
             CloseEditModal();
@@ -955,10 +1053,11 @@ MCP_JSON_END -->";
         try
         {
             var updatedIssue = await GitHubService.AssignIssueToCopilotAsync(Owner, Repo, issue.Number);
-            var index = issues.FindIndex(i => i.Number == issue.Number);
+            var index = allIssues.FindIndex(i => i.Number == issue.Number);
             if (index >= 0)
             {
-                issues[index] = updatedIssue;
+                allIssues[index] = updatedIssue;
+                ApplyFilters();
             }
         }
         catch (Exception ex)

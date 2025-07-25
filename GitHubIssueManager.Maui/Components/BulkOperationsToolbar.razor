@@ -1,0 +1,596 @@
+@using GitHubIssueManager.Maui.Models
+@using GitHubIssueManager.Maui.Services
+@using MudBlazor
+@inject GitHubService GitHubService
+@rendermode InteractiveServer
+
+@if (SelectedIssues.Any())
+{
+    <MudPaper Elevation="2" Class="pa-3 mb-3" Style="border-left: 4px solid var(--mud-palette-primary);">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Primary" />
+                <MudText Typo="Typo.subtitle1">
+                    @SelectedIssues.Count issue@(SelectedIssues.Count == 1 ? "" : "s") selected
+                </MudText>
+            </MudStack>
+            
+            <MudStack Row="true" Spacing="1">
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Text"
+                           Color="Color.Secondary"
+                           StartIcon="@Icons.Material.Filled.PersonAdd"
+                           OnClick="ShowBulkAssignDialog">
+                    Assign
+                </MudButton>
+                
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Text"
+                           Color="Color.Warning"
+                           StartIcon="@Icons.Material.Filled.Label"
+                           OnClick="ShowBulkLabelDialog">
+                    Label
+                </MudButton>
+                
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Text"
+                           Color="Color.Error"
+                           StartIcon="@Icons.Material.Filled.Close"
+                           OnClick="ShowBulkCloseDialog">
+                    Close
+                </MudButton>
+                
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Text"
+                           Color="Color.Success"
+                           StartIcon="@Icons.Material.Filled.Download"
+                           OnClick="ShowExportDialogModal">
+                    Export
+                </MudButton>
+                
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Text"
+                           Color="Color.Secondary"
+                           StartIcon="@Icons.Material.Filled.Clear"
+                           OnClick="ClearSelection">
+                    Clear
+                </MudButton>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+}
+
+<!-- Bulk Assign Dialog -->
+<MudDialog @bind-Visible="ShowAssignDialog">
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h6">Bulk Assign Issues</MudText>
+            <MudText Typo="Typo.body2">
+                Assign @SelectedIssues.Count issue@(SelectedIssues.Count == 1 ? "" : "s") to the selected users.
+            </MudText>
+            
+            @if (isLoadingAssignees)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="py-4">
+                    <MudProgressCircular Size="Size.Medium" Indeterminate="true" />
+                    <MudText Typo="Typo.body2">Loading assignees...</MudText>
+                </MudStack>
+            }
+            else if (availableAssignees.Any())
+            {
+                <MudStack Spacing="2">
+                    @foreach (var assignee in availableAssignees)
+                    {
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudCheckBox @bind-Value="@selectedAssignees[assignee.Login]" 
+                                         Color="Color.Primary" />
+                            <MudAvatar Size="Size.Small" Src="@assignee.AvatarUrl" />
+                            <MudText Typo="Typo.body1">@assignee.Login</MudText>
+                        </MudStack>
+                    }
+                </MudStack>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">
+                    <MudText Typo="Typo.body2">No assignees available for this repository.</MudText>
+                </MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => ShowAssignDialog = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" 
+                   Variant="Variant.Filled"
+                   OnClick="BulkAssignIssues"
+                   Disabled="@(isBulkProcessing || !selectedAssignees.Any(kvp => kvp.Value))">
+            @if (isBulkProcessing)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
+            }
+            Assign Issues
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<!-- Bulk Label Dialog -->
+<MudDialog @bind-Visible="ShowLabelDialog">
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h6">Bulk Label Issues</MudText>
+            <MudText Typo="Typo.body2">
+                Add labels to @SelectedIssues.Count issue@(SelectedIssues.Count == 1 ? "" : "s").
+            </MudText>
+            
+            @if (isLoadingLabels)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="py-4">
+                    <MudProgressCircular Size="Size.Medium" Indeterminate="true" />
+                    <MudText Typo="Typo.body2">Loading labels...</MudText>
+                </MudStack>
+            }
+            else if (availableLabels.Any())
+            {
+                <MudStack Spacing="2">
+                    @foreach (var label in availableLabels)
+                    {
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudCheckBox @bind-Value="@selectedLabels[label.Name]" 
+                                         Color="Color.Primary" />
+                            <MudChip T="string" Size="Size.Small" 
+                                     Style="@($"background-color: #{label.Color}; color: {GetContrastColor(label.Color)}")"
+                                     Text="@label.Name" />
+                            @if (!string.IsNullOrWhiteSpace(label.Description))
+                            {
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">@label.Description</MudText>
+                            }
+                        </MudStack>
+                    }
+                </MudStack>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">
+                    <MudText Typo="Typo.body2">No labels available for this repository.</MudText>
+                </MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => ShowLabelDialog = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" 
+                   Variant="Variant.Filled"
+                   OnClick="BulkLabelIssues"
+                   Disabled="@(isBulkProcessing || !selectedLabels.Any(kvp => kvp.Value))">
+            @if (isBulkProcessing)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
+            }
+            Add Labels
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<!-- Bulk Close Dialog -->
+<MudDialog @bind-Visible="ShowCloseDialog">
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h6">Bulk Close Issues</MudText>
+            <MudAlert Severity="Severity.Warning" Dense="true">
+                <MudText Typo="Typo.body2">
+                    <strong>Warning:</strong> This will close @SelectedIssues.Count issue@(SelectedIssues.Count == 1 ? "" : "s"). 
+                    This action can be undone by reopening the issues individually.
+                </MudText>
+            </MudAlert>
+            
+            <MudText Typo="Typo.body2">Issues to be closed:</MudText>
+            <MudStack Spacing="1" Class="max-height-300 overflow-y-auto">
+                @foreach (var issue in SelectedIssues.Take(10))
+                {
+                    <MudText Typo="Typo.body2">• #@issue.Number - @issue.Title</MudText>
+                }
+                @if (SelectedIssues.Count > 10)
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">... and @(SelectedIssues.Count - 10) more</MudText>
+                }
+            </MudStack>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => ShowCloseDialog = false">Cancel</MudButton>
+        <MudButton Color="Color.Error" 
+                   Variant="Variant.Filled"
+                   OnClick="BulkCloseIssues"
+                   Disabled="@isBulkProcessing">
+            @if (isBulkProcessing)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
+            }
+            Close Issues
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<!-- Export Dialog -->
+<MudDialog @bind-Visible="ShowExportDialog">
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h6">Export Issues</MudText>
+            <MudText Typo="Typo.body2">
+                Export @SelectedIssues.Count selected issue@(SelectedIssues.Count == 1 ? "" : "s") to a file.
+            </MudText>
+            
+            <MudRadioGroup @bind-Value="exportFormat">
+                <MudRadio Value="@("csv")" Color="Color.Primary">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.TableChart" Size="Size.Small" />
+                        <MudText>CSV Format</MudText>
+                    </MudStack>
+                </MudRadio>
+                <MudRadio Value="@("json")" Color="Color.Primary">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.Code" Size="Size.Small" />
+                        <MudText>JSON Format</MudText>
+                    </MudStack>
+                </MudRadio>
+            </MudRadioGroup>
+            
+            <MudTextField @bind-Value="exportFilename"
+                          Label="Filename"
+                          Placeholder="issues-export"
+                          Variant="Variant.Outlined"
+                          HelperText="File extension will be added automatically" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => ShowExportDialog = false">Cancel</MudButton>
+        <MudButton Color="Color.Success" 
+                   Variant="Variant.Filled"
+                   OnClick="ExportIssues"
+                   Disabled="@(isBulkProcessing || string.IsNullOrWhiteSpace(exportFilename))">
+            @if (isBulkProcessing)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
+            }
+            Export
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public string Owner { get; set; } = string.Empty;
+    [Parameter] public string Repo { get; set; } = string.Empty;
+    [Parameter] public List<GitHubIssue> SelectedIssues { get; set; } = new();
+    [Parameter] public EventCallback<List<GitHubIssue>> OnIssuesUpdated { get; set; }
+    [Parameter] public EventCallback OnSelectionCleared { get; set; }
+
+    // Dialog states
+    private bool ShowAssignDialog = false;
+    private bool ShowLabelDialog = false;
+    private bool ShowCloseDialog = false;
+    private bool ShowExportDialog = false;
+
+    // Processing states
+    private bool isBulkProcessing = false;
+    private bool isLoadingAssignees = false;
+    private bool isLoadingLabels = false;
+
+    // Data
+    private List<GitHubUser> availableAssignees = new();
+    private List<GitHubLabel> availableLabels = new();
+    private Dictionary<string, bool> selectedAssignees = new();
+    private Dictionary<string, bool> selectedLabels = new();
+
+    // Export settings
+    private string exportFormat = "csv";
+    private string exportFilename = "issues-export";
+
+    private async Task ShowBulkAssignDialog()
+    {
+        ShowAssignDialog = true;
+        selectedAssignees.Clear();
+        await LoadAvailableAssignees();
+    }
+
+    private async Task ShowBulkLabelDialog()
+    {
+        ShowLabelDialog = true;
+        selectedLabels.Clear();
+        await LoadAvailableLabels();
+    }
+
+    private void ShowBulkCloseDialog()
+    {
+        ShowCloseDialog = true;
+    }
+
+    private void ShowExportDialogModal()
+    {
+        ShowExportDialog = true;
+        exportFilename = $"issues-export-{DateTime.Now:yyyy-MM-dd}";
+    }
+
+    private async Task LoadAvailableAssignees()
+    {
+        if (string.IsNullOrEmpty(Owner) || string.IsNullOrEmpty(Repo))
+            return;
+
+        isLoadingAssignees = true;
+        StateHasChanged();
+
+        try
+        {
+            var assignees = await GitHubService.GetAvailableAssigneesAsync(Owner, Repo);
+            availableAssignees = assignees.ToList();
+            
+            selectedAssignees.Clear();
+            foreach (var assignee in availableAssignees)
+            {
+                selectedAssignees[assignee.Login] = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading assignees: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingAssignees = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadAvailableLabels()
+    {
+        if (string.IsNullOrEmpty(Owner) || string.IsNullOrEmpty(Repo))
+            return;
+
+        isLoadingLabels = true;
+        StateHasChanged();
+
+        try
+        {
+            availableLabels = (await GitHubService.GetLabelsAsync(Owner, Repo))
+                .Select(l => new GitHubLabel 
+                { 
+                    Id = l.Id, 
+                    Name = l.Name, 
+                    Color = l.Color, 
+                    Description = l.Description,
+                    IsDefault = false
+                }).ToList();
+            
+            selectedLabels.Clear();
+            foreach (var label in availableLabels)
+            {
+                selectedLabels[label.Name] = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading labels: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingLabels = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task BulkAssignIssues()
+    {
+        var assigneesToAdd = selectedAssignees.Where(kvp => kvp.Value).Select(kvp => kvp.Key).ToList();
+        if (!assigneesToAdd.Any()) return;
+
+        isBulkProcessing = true;
+        StateHasChanged();
+
+        try
+        {
+            var issueNumbers = SelectedIssues.Select(i => i.Number);
+            var updatedIssues = await GitHubService.BulkAssignIssuesAsync(Owner, Repo, issueNumbers, assigneesToAdd);
+            
+            await OnIssuesUpdated.InvokeAsync(updatedIssues);
+            ShowAssignDialog = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in bulk assign: {ex.Message}");
+        }
+        finally
+        {
+            isBulkProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task BulkLabelIssues()
+    {
+        var labelsToAdd = selectedLabels.Where(kvp => kvp.Value).Select(kvp => kvp.Key).ToList();
+        if (!labelsToAdd.Any()) return;
+
+        isBulkProcessing = true;
+        StateHasChanged();
+
+        try
+        {
+            // Note: GitHub API doesn't have a bulk label endpoint, so we'd need to implement this
+            // by updating each issue individually. For now, we'll simulate this.
+            var updatedIssues = new List<GitHubIssue>();
+            
+            foreach (var issue in SelectedIssues)
+            {
+                try
+                {
+                    // In a real implementation, you'd call GitHubService.AddLabelsToIssueAsync
+                    // For now, we'll just add the labels to the local issue objects
+                    var newLabels = labelsToAdd.Where(l => !issue.Labels.Any(existing => existing.Name == l))
+                                              .Select(l => 
+                                              {
+                                                  var availableLabel = availableLabels.First(al => al.Name == l);
+                                                  return new GitHubLabel 
+                                                  { 
+                                                      Id = availableLabel.Id, 
+                                                      Name = availableLabel.Name, 
+                                                      Color = availableLabel.Color, 
+                                                      Description = availableLabel.Description,
+                                                      IsDefault = availableLabel.IsDefault
+                                                  };
+                                              })
+                                              .ToList();
+                    
+                    issue.Labels.AddRange(newLabels);
+                    updatedIssues.Add(issue);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error labeling issue #{issue.Number}: {ex.Message}");
+                }
+            }
+            
+            await OnIssuesUpdated.InvokeAsync(updatedIssues);
+            ShowLabelDialog = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in bulk label: {ex.Message}");
+        }
+        finally
+        {
+            isBulkProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task BulkCloseIssues()
+    {
+        isBulkProcessing = true;
+        StateHasChanged();
+
+        try
+        {
+            var issueNumbers = SelectedIssues.Select(i => i.Number);
+            var updatedIssues = await GitHubService.BulkCloseIssuesAsync(Owner, Repo, issueNumbers);
+            
+            await OnIssuesUpdated.InvokeAsync(updatedIssues);
+            ShowCloseDialog = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in bulk close: {ex.Message}");
+        }
+        finally
+        {
+            isBulkProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportIssues()
+    {
+        if (string.IsNullOrWhiteSpace(exportFilename)) return;
+
+        isBulkProcessing = true;
+        StateHasChanged();
+
+        try
+        {
+            var content = exportFormat switch
+            {
+                "csv" => GenerateCsvExport(),
+                "json" => GenerateJsonExport(),
+                _ => throw new ArgumentException("Invalid export format")
+            };
+
+            var filename = $"{exportFilename}.{exportFormat}";
+            var bytes = System.Text.Encoding.UTF8.GetBytes(content);
+            
+            // In a browser context, we'd need to use JavaScript to download the file
+            // For now, we'll log the content
+            Console.WriteLine($"Exporting {SelectedIssues.Count} issues to {filename}");
+            Console.WriteLine(content);
+            
+            ShowExportDialog = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error exporting issues: {ex.Message}");
+        }
+        finally
+        {
+            isBulkProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GenerateCsvExport()
+    {
+        var csv = new System.Text.StringBuilder();
+        csv.AppendLine("Number,Title,State,Author,Assignees,Labels,Milestone,Created,Updated,URL");
+        
+        foreach (var issue in SelectedIssues)
+        {
+            var assignees = string.Join(";", issue.Assignees.Select(a => a.Login));
+            var labels = string.Join(";", issue.Labels.Select(l => l.Name));
+            var milestone = issue.Milestone?.Title ?? "";
+            
+            csv.AppendLine($"{issue.Number},\"{EscapeCsv(issue.Title)}\",{issue.State},{issue.User?.Login},\"{assignees}\",\"{labels}\",\"{milestone}\",{issue.CreatedAt:yyyy-MM-dd},{issue.UpdatedAt:yyyy-MM-dd},{issue.HtmlUrl}");
+        }
+        
+        return csv.ToString();
+    }
+
+    private string GenerateJsonExport()
+    {
+        var exportData = new
+        {
+            exportedAt = DateTime.UtcNow,
+            repository = $"{Owner}/{Repo}",
+            totalIssues = SelectedIssues.Count,
+            issues = SelectedIssues.Select(issue => new
+            {
+                number = issue.Number,
+                title = issue.Title,
+                body = issue.Body,
+                state = issue.State,
+                author = issue.User?.Login,
+                assignees = issue.Assignees.Select(a => a.Login),
+                labels = issue.Labels.Select(l => new { l.Name, l.Color }),
+                milestone = issue.Milestone?.Title,
+                created_at = issue.CreatedAt,
+                updated_at = issue.UpdatedAt,
+                closed_at = issue.ClosedAt,
+                html_url = issue.HtmlUrl,
+                comment_count = issue.CommentCount
+            })
+        };
+        
+        return System.Text.Json.JsonSerializer.Serialize(exportData, new System.Text.Json.JsonSerializerOptions 
+        { 
+            WriteIndented = true 
+        });
+    }
+
+    private static string EscapeCsv(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return value;
+        return value.Replace("\"", "\"\"");
+    }
+
+    private void ClearSelection()
+    {
+        OnSelectionCleared.InvokeAsync();
+    }
+
+    private static string GetContrastColor(string hexColor)
+    {
+        if (hexColor.Length != 6) return "white";
+        
+        var r = Convert.ToInt32(hexColor.Substring(0, 2), 16);
+        var g = Convert.ToInt32(hexColor.Substring(2, 2), 16);
+        var b = Convert.ToInt32(hexColor.Substring(4, 2), 16);
+        var brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+        
+        return brightness > 155 ? "black" : "white";
+    }
+}

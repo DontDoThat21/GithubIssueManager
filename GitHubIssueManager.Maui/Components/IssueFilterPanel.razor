@@ -1,0 +1,580 @@
+@using GitHubIssueManager.Maui.Models
+@using GitHubIssueManager.Maui.Services
+@using MudBlazor
+@inject IssueFilterService FilterService
+@inject GitHubService GitHubService
+@rendermode InteractiveServer
+
+<MudPaper Elevation="2" Class="pa-4 mb-4">
+    <MudStack Spacing="3">
+        <!-- Header -->
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.FilterList" Color="Color.Primary" />
+                <MudText Typo="Typo.h6">Advanced Filters</MudText>
+                @if (CurrentFilter.HasActiveFilters)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Info" 
+                             Text="@($"{FilteredCount} of {TotalCount} issues")" />
+                }
+            </MudStack>
+            <MudStack Row="true" Spacing="1">
+                <MudButton Size="Size.Small" 
+                           Variant="Variant.Text" 
+                           Color="Color.Secondary"
+                           StartIcon="@Icons.Material.Filled.Refresh"
+                           OnClick="RefreshData">
+                    Refresh
+                </MudButton>
+                <MudButton Size="Size.Small" 
+                           Variant="Variant.Text" 
+                           Color="Color.Warning"
+                           StartIcon="@Icons.Material.Filled.Clear"
+                           OnClick="ClearFilters"
+                           Disabled="@(!CurrentFilter.HasActiveFilters)">
+                    Clear All
+                </MudButton>
+                <MudIconButton Icon="@(IsExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                               OnClick="ToggleExpanded" />
+            </MudStack>
+        </MudStack>
+
+        <!-- Search Bar (Always Visible) -->
+        <MudTextField @bind-Value="SearchQuery"
+                      Label="Search issues..."
+                      Placeholder="Search by title, description, or assignee..."
+                      Variant="Variant.Outlined"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      FullWidth="true"
+                      Immediate="true"
+                      DebounceInterval="300"
+                      OnDebounceIntervalElapsed="OnSearchChanged" />
+
+        <!-- Active Filters Display -->
+        @if (CurrentFilter.HasActiveFilters)
+        {
+            <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Active filters:</MudText>
+                
+                @if (CurrentFilter.State != IssueState.Open)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" 
+                             OnClose="() => RemoveStateFilter()"
+                             Text="@($"State: {CurrentFilter.State}")" />
+                }
+                
+                @foreach (var assignee in CurrentFilter.Assignees)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Secondary" 
+                             OnClose="() => RemoveAssigneeFilter(assignee)"
+                             Text="@($"Assignee: {assignee}")" />
+                }
+                
+                @foreach (var label in CurrentFilter.Labels)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Info" 
+                             OnClose="() => RemoveLabelFilter(label)"
+                             Text="@($"Label: {label}")" />
+                }
+                
+                @if (!string.IsNullOrWhiteSpace(CurrentFilter.Milestone))
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success" 
+                             OnClose="() => RemoveMilestoneFilter()"
+                             Text="@($"Milestone: {CurrentFilter.Milestone}")" />
+                }
+                
+                @if (!string.IsNullOrWhiteSpace(CurrentFilter.Author))
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" 
+                             OnClose="() => RemoveAuthorFilter()"
+                             Text="@($"Author: {CurrentFilter.Author}")" />
+                }
+
+                @if (CurrentFilter.CreatedAfter.HasValue || CurrentFilter.CreatedBefore.HasValue)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Error" 
+                             OnClose="() => RemoveDateFilter()"
+                             Text="@GetDateFilterText()" />
+                }
+            </MudStack>
+        }
+
+        <!-- Expanded Filters -->
+        <MudCollapse Expanded="IsExpanded">
+            <MudStack Spacing="3">
+                <!-- Filter Row 1: State, Sort, and Quick Filters -->
+                <MudGrid>
+                    <MudItem md="3" sm="6" xs="12">
+                        <MudSelect @bind-Value="SelectedState"
+                                   Label="Issue State"
+                                   Variant="Variant.Outlined"
+                                   Dense="true"
+                                   OnSelectionChanged="OnStateChanged">
+                            <MudSelectItem Value="IssueState.Open">Open Issues</MudSelectItem>
+                            <MudSelectItem Value="IssueState.Closed">Closed Issues</MudSelectItem>
+                            <MudSelectItem Value="IssueState.All">All Issues</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem md="3" sm="6" xs="12">
+                        <MudSelect @bind-Value="SelectedSortBy"
+                                   Label="Sort By"
+                                   Variant="Variant.Outlined"
+                                   Dense="true"
+                                   OnSelectionChanged="OnSortChanged">
+                            <MudSelectItem Value="IssueSortBy.Updated">Recently Updated</MudSelectItem>
+                            <MudSelectItem Value="IssueSortBy.Created">Recently Created</MudSelectItem>
+                            <MudSelectItem Value="IssueSortBy.Comments">Most Comments</MudSelectItem>
+                            <MudSelectItem Value="IssueSortBy.Title">Title (A-Z)</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem md="3" sm="6" xs="12">
+                        <MudSelect @bind-Value="SelectedSortDirection"
+                                   Label="Sort Direction"
+                                   Variant="Variant.Outlined"
+                                   Dense="true"
+                                   OnSelectionChanged="OnSortChanged">
+                            <MudSelectItem Value="AppSortDirection.Descending">Descending</MudSelectItem>
+                            <MudSelectItem Value="AppSortDirection.Ascending">Ascending</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem md="3" sm="6" xs="12">
+                        <MudTextField @bind-Value="AuthorQuery"
+                                      Label="Author"
+                                      Placeholder="Filter by author..."
+                                      Variant="Variant.Outlined"
+                                      Dense="true"
+                                      Immediate="true"
+                                      DebounceInterval="300"
+                                      OnDebounceIntervalElapsed="OnAuthorChanged" />
+                    </MudItem>
+                </MudGrid>
+
+                <!-- Filter Row 2: Assignees and Labels -->
+                <MudGrid>
+                    <MudItem md="6" xs="12">
+                        <MudAutocomplete T="string" 
+                                         @bind-Value="SelectedAssignee"
+                                         Label="Add Assignee Filter"
+                                         Placeholder="Type to search assignees..."
+                                         SearchFunc="SearchAssignees"
+                                         Variant="Variant.Outlined"
+                                         Dense="true"
+                                         OnSelectionChanged="OnAssigneeSelected"
+                                         ResetValueOnEmptyText="true"
+                                         CoerceText="false" />
+                        
+                        @if (CurrentFilter.Assignees.Any())
+                        {
+                            <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap" Class="mt-2">
+                                @foreach (var assignee in CurrentFilter.Assignees)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Secondary" 
+                                             OnClose="() => RemoveAssigneeFilter(assignee)"
+                                             Text="@assignee" />
+                                }
+                            </MudStack>
+                        }
+                    </MudItem>
+                    <MudItem md="6" xs="12">
+                        <MudAutocomplete T="string" 
+                                         @bind-Value="SelectedLabel"
+                                         Label="Add Label Filter"
+                                         Placeholder="Type to search labels..."
+                                         SearchFunc="SearchLabels"
+                                         Variant="Variant.Outlined"
+                                         Dense="true"
+                                         OnSelectionChanged="OnLabelSelected"
+                                         ResetValueOnEmptyText="true"
+                                         CoerceText="false" />
+                        
+                        @if (CurrentFilter.Labels.Any())
+                        {
+                            <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap" Class="mt-2">
+                                @foreach (var label in CurrentFilter.Labels)
+                                {
+                                    var labelColor = AvailableLabels.FirstOrDefault(l => l.Name == label)?.Color ?? "cccccc";
+                                    <MudChip T="string" Size="Size.Small" 
+                                             Style="@($"background-color: #{labelColor}; color: {GetContrastColor(labelColor)}")"
+                                             OnClose="() => RemoveLabelFilter(label)"
+                                             Text="@label" />
+                                }
+                            </MudStack>
+                        }
+                    </MudItem>
+                </MudGrid>
+
+                <!-- Filter Row 3: Milestone and Date Range -->
+                <MudGrid>
+                    <MudItem md="4" xs="12">
+                        <MudAutocomplete T="string" 
+                                         @bind-Value="SelectedMilestone"
+                                         Label="Milestone"
+                                         Placeholder="Select milestone..."
+                                         SearchFunc="SearchMilestones"
+                                         Variant="Variant.Outlined"
+                                         Dense="true"
+                                         OnSelectionChanged="OnMilestoneSelected"
+                                         ResetValueOnEmptyText="true"
+                                         CoerceText="false" />
+                    </MudItem>
+                    <MudItem md="4" xs="12">
+                        <MudDatePicker @bind-Date="CreatedAfter"
+                                       Label="Created After"
+                                       Variant="Variant.Outlined"
+                                       Dense="true"
+                                       OnDateChanged="OnDateChanged" />
+                    </MudItem>
+                    <MudItem md="4" xs="12">
+                        <MudDatePicker @bind-Date="CreatedBefore"
+                                       Label="Created Before"
+                                       Variant="Variant.Outlined"
+                                       Dense="true"
+                                       OnDateChanged="OnDateChanged" />
+                    </MudItem>
+                </MudGrid>
+
+                <!-- Saved Filters -->
+                @if (SavedFilters.Any())
+                {
+                    <MudDivider />
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudText Typo="Typo.subtitle2">Saved Filters:</MudText>
+                        @foreach (var savedFilter in SavedFilters.Take(3))
+                        {
+                            <MudButton Size="Size.Small" 
+                                       Variant="Variant.Text" 
+                                       Color="Color.Info"
+                                       OnClick="() => FilterService.LoadSavedFilter(savedFilter.Id)">
+                                @savedFilter.Name
+                            </MudButton>
+                        }
+                        <MudButton Size="Size.Small" 
+                                   Variant="Variant.Text"
+                                   StartIcon="@Icons.Material.Filled.Save"
+                                   OnClick="ShowSaveFilterDialog">
+                            Save Current
+                        </MudButton>
+                    </MudStack>
+                }
+            </MudStack>
+        </MudCollapse>
+    </MudStack>
+</MudPaper>
+
+<!-- Save Filter Dialog -->
+<MudDialog @bind-Visible="ShowSaveDialog">
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h6">Save Filter</MudText>
+            <MudTextField @bind-Value="SaveFilterName"
+                          Label="Filter Name"
+                          Placeholder="Enter a name for this filter..."
+                          Variant="Variant.Outlined" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => ShowSaveDialog = false">Cancel</MudButton>
+        <MudButton Color="Color.Primary" 
+                   Variant="Variant.Filled"
+                   OnClick="SaveCurrentFilter"
+                   Disabled="@string.IsNullOrWhiteSpace(SaveFilterName)">
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public string Owner { get; set; } = string.Empty;
+    [Parameter] public string Repo { get; set; } = string.Empty;
+    [Parameter] public int TotalCount { get; set; }
+    [Parameter] public int FilteredCount { get; set; }
+    [Parameter] public EventCallback OnFilterChanged { get; set; }
+
+    // UI State
+    private bool IsExpanded = false;
+    private bool ShowSaveDialog = false;
+    private string SaveFilterName = string.Empty;
+
+    // Filter UI bindings
+    private string SearchQuery = string.Empty;
+    private IssueState SelectedState = IssueState.Open;
+    private IssueSortBy SelectedSortBy = IssueSortBy.Updated;
+    private AppSortDirection SelectedSortDirection = AppSortDirection.Descending;
+    private string AuthorQuery = string.Empty;
+    private string SelectedAssignee = string.Empty;
+    private string SelectedLabel = string.Empty;
+    private string SelectedMilestone = string.Empty;
+    private DateTime? CreatedAfter;
+    private DateTime? CreatedBefore;
+
+    // Data
+    private List<GitHubUser> AvailableAssignees = new();
+    private List<GitHubLabel> AvailableLabels = new();
+    private List<GitHubMilestone> AvailableMilestones = new();
+    private List<SavedFilter> SavedFilters = new();
+    
+    private IssueFilter CurrentFilter => FilterService.CurrentFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Subscribe to filter changes
+        FilterService.FilterChanged += OnFilterServiceChanged;
+        
+        // Load initial data
+        await LoadFilterData();
+        LoadSavedFilters();
+        
+        // Initialize UI from current filter
+        SyncUIFromFilter();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(Owner) && !string.IsNullOrEmpty(Repo))
+        {
+            await LoadFilterData();
+        }
+    }
+
+    public void Dispose()
+    {
+        FilterService.FilterChanged -= OnFilterServiceChanged;
+    }
+
+    private async Task LoadFilterData()
+    {
+        if (string.IsNullOrEmpty(Owner) || string.IsNullOrEmpty(Repo))
+            return;
+
+        try
+        {
+            AvailableAssignees = (await GitHubService.GetAvailableAssigneesAsync(Owner, Repo)).ToList();
+            AvailableLabels = (await GitHubService.GetLabelsAsync(Owner, Repo))
+                .Select(l => new GitHubLabel 
+                { 
+                    Id = l.Id, 
+                    Name = l.Name, 
+                    Color = l.Color, 
+                    Description = l.Description,
+                    IsDefault = false
+                }).ToList();
+            AvailableMilestones = (await GitHubService.GetMilestonesAsync(Owner, Repo))
+                .Select(m => new GitHubMilestone 
+                { 
+                    Id = m.Id, 
+                    Title = m.Title, 
+                    Description = m.Description, 
+                    Number = m.Number, 
+                    State = m.State, 
+                    DueOn = m.DueOn, 
+                    CreatedAt = m.CreatedAt, 
+                    UpdatedAt = m.UpdatedAt 
+                }).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading filter data: {ex.Message}");
+        }
+    }
+
+    private void LoadSavedFilters()
+    {
+        SavedFilters = FilterService.GetSavedFilters().ToList();
+    }
+
+    private void SyncUIFromFilter()
+    {
+        SearchQuery = CurrentFilter.SearchQuery;
+        SelectedState = CurrentFilter.State;
+        SelectedSortBy = CurrentFilter.SortBy;
+        SelectedSortDirection = CurrentFilter.SortDirection;
+        AuthorQuery = CurrentFilter.Author ?? string.Empty;
+        CreatedAfter = CurrentFilter.CreatedAfter;
+        CreatedBefore = CurrentFilter.CreatedBefore;
+        SelectedMilestone = CurrentFilter.Milestone ?? string.Empty;
+    }
+
+    private void OnFilterServiceChanged(IssueFilter filter)
+    {
+        SyncUIFromFilter();
+        StateHasChanged();
+        _ = OnFilterChanged.InvokeAsync();
+    }
+
+    private void UpdateFilter()
+    {
+        var filter = CurrentFilter.Clone();
+        filter.SearchQuery = SearchQuery;
+        filter.State = SelectedState;
+        filter.SortBy = SelectedSortBy;
+        filter.SortDirection = SelectedSortDirection;
+        filter.Author = string.IsNullOrWhiteSpace(AuthorQuery) ? null : AuthorQuery;
+        filter.CreatedAfter = CreatedAfter;
+        filter.CreatedBefore = CreatedBefore;
+        filter.Milestone = string.IsNullOrWhiteSpace(SelectedMilestone) ? null : SelectedMilestone;
+        
+        FilterService.UpdateFilter(filter);
+    }
+
+    // Event handlers
+    private void OnSearchChanged() => UpdateFilter();
+    private void OnStateChanged() => UpdateFilter();
+    private void OnSortChanged() => UpdateFilter();
+    private void OnAuthorChanged() => UpdateFilter();
+    private void OnDateChanged() => UpdateFilter();
+    private void OnMilestoneSelected() => UpdateFilter();
+
+    private void OnAssigneeSelected()
+    {
+        if (!string.IsNullOrWhiteSpace(SelectedAssignee) && !CurrentFilter.Assignees.Contains(SelectedAssignee))
+        {
+            var filter = CurrentFilter.Clone();
+            filter.Assignees.Add(SelectedAssignee);
+            FilterService.UpdateFilter(filter);
+        }
+        SelectedAssignee = string.Empty;
+    }
+
+    private void OnLabelSelected()
+    {
+        if (!string.IsNullOrWhiteSpace(SelectedLabel) && !CurrentFilter.Labels.Contains(SelectedLabel))
+        {
+            var filter = CurrentFilter.Clone();
+            filter.Labels.Add(SelectedLabel);
+            FilterService.UpdateFilter(filter);
+        }
+        SelectedLabel = string.Empty;
+    }
+
+    // Filter removal methods
+    private void RemoveStateFilter()
+    {
+        SelectedState = IssueState.Open;
+        UpdateFilter();
+    }
+
+    private void RemoveAssigneeFilter(string assignee)
+    {
+        var filter = CurrentFilter.Clone();
+        filter.Assignees.Remove(assignee);
+        FilterService.UpdateFilter(filter);
+    }
+
+    private void RemoveLabelFilter(string label)
+    {
+        var filter = CurrentFilter.Clone();
+        filter.Labels.Remove(label);
+        FilterService.UpdateFilter(filter);
+    }
+
+    private void RemoveMilestoneFilter()
+    {
+        SelectedMilestone = string.Empty;
+        UpdateFilter();
+    }
+
+    private void RemoveAuthorFilter()
+    {
+        AuthorQuery = string.Empty;
+        UpdateFilter();
+    }
+
+    private void RemoveDateFilter()
+    {
+        CreatedAfter = null;
+        CreatedBefore = null;
+        UpdateFilter();
+    }
+
+    private void ClearFilters()
+    {
+        FilterService.ResetFilter();
+        SyncUIFromFilter();
+    }
+
+    private void ToggleExpanded()
+    {
+        IsExpanded = !IsExpanded;
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadFilterData();
+        await OnFilterChanged.InvokeAsync();
+    }
+
+    // Search functions for autocomplete
+    private async Task<IEnumerable<string>> SearchAssignees(string value, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return AvailableAssignees.Select(a => a.Login);
+        
+        return AvailableAssignees
+            .Where(a => a.Login.Contains(value, StringComparison.OrdinalIgnoreCase))
+            .Select(a => a.Login);
+    }
+
+    private async Task<IEnumerable<string>> SearchLabels(string value, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return AvailableLabels.Select(l => l.Name);
+        
+        return AvailableLabels
+            .Where(l => l.Name.Contains(value, StringComparison.OrdinalIgnoreCase))
+            .Select(l => l.Name);
+    }
+
+    private async Task<IEnumerable<string>> SearchMilestones(string value, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return AvailableMilestones.Select(m => m.Title);
+        
+        return AvailableMilestones
+            .Where(m => m.Title.Contains(value, StringComparison.OrdinalIgnoreCase))
+            .Select(m => m.Title);
+    }
+
+    // Helper methods
+    private string GetDateFilterText()
+    {
+        if (CurrentFilter.CreatedAfter.HasValue && CurrentFilter.CreatedBefore.HasValue)
+            return $"Created: {CurrentFilter.CreatedAfter:MMM dd} - {CurrentFilter.CreatedBefore:MMM dd}";
+        else if (CurrentFilter.CreatedAfter.HasValue)
+            return $"Created after: {CurrentFilter.CreatedAfter:MMM dd, yyyy}";
+        else if (CurrentFilter.CreatedBefore.HasValue)
+            return $"Created before: {CurrentFilter.CreatedBefore:MMM dd, yyyy}";
+        return "Date filter";
+    }
+
+    private static string GetContrastColor(string hexColor)
+    {
+        if (hexColor.Length != 6) return "white";
+        
+        var r = Convert.ToInt32(hexColor.Substring(0, 2), 16);
+        var g = Convert.ToInt32(hexColor.Substring(2, 2), 16);
+        var b = Convert.ToInt32(hexColor.Substring(4, 2), 16);
+        var brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+        
+        return brightness > 155 ? "black" : "white";
+    }
+
+    // Save filter functionality
+    private void ShowSaveFilterDialog()
+    {
+        ShowSaveDialog = true;
+        SaveFilterName = string.Empty;
+    }
+
+    private async Task SaveCurrentFilter()
+    {
+        if (!string.IsNullOrWhiteSpace(SaveFilterName))
+        {
+            await FilterService.SaveFilterAsync(SaveFilterName);
+            LoadSavedFilters();
+            ShowSaveDialog = false;
+            SaveFilterName = string.Empty;
+        }
+    }
+}
