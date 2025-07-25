@@ -77,6 +77,7 @@ builder.Services.AddScoped<GitHubService>(); // Changed from Singleton to Scoped
 builder.Services.AddSingleton<RepositoryService>();
 builder.Services.AddScoped<McpServerService>(); // Changed from Singleton to Scoped to resolve DI error
 builder.Services.AddSingleton<IssueFilterService>(); // Add the new filter service
+builder.Services.AddScoped<IssueExportService>(); // Add the new export service
 
 var app = builder.Build();
 
