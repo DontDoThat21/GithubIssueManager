@@ -200,7 +200,7 @@ public class IssueFilterService
         {
             savedFilter.LastUsed = DateTime.UtcNow;
             UpdateFilter(savedFilter.Filter);
-            _ = SaveFiltersToFileAsync(); // Fire and forget
+            Task.Run(() => SaveFiltersToFileAsync()); // Execute in background with proper handling
         }
     }
 
