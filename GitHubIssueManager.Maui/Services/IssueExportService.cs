@@ -169,10 +169,10 @@ public class IssueExportService
             ClosedIssues = issueList.Count(i => i.IsClosed),
             UniqueAssignees = issueList.SelectMany(i => i.Assignees).Select(a => a.Login).Distinct().Count(),
             UniqueLabels = issueList.SelectMany(i => i.Labels).Select(l => l.Name).Distinct().Count(),
-            DateRange = issueList.Any() ? new
+            DateRange = issueList.Any() ? new DateRange
             {
-                Earliest = issueList.Min(i => i.CreatedAt),
-                Latest = issueList.Max(i => i.UpdatedAt)
+                StartDate = issueList.Min(i => i.CreatedAt),
+                EndDate = issueList.Max(i => i.UpdatedAt)
             } : null
         };
     }
@@ -194,5 +194,11 @@ public class ExportStats
     public int ClosedIssues { get; set; }
     public int UniqueAssignees { get; set; }
     public int UniqueLabels { get; set; }
-    public DateRangeInfo? DateRange { get; set; }
+    public DateRange? DateRange { get; set; }
+}
+
+public class DateRange
+{
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
 }

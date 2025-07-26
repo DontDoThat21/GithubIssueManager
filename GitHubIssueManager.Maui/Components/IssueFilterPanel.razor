@@ -4,6 +4,7 @@
 @inject IssueFilterService FilterService
 @inject GitHubService GitHubService
 @rendermode InteractiveServer
+@implements IDisposable
 
 <MudPaper Elevation="2" Class="pa-4 mb-4">
     <MudStack Spacing="3">
@@ -285,7 +286,7 @@
     </DialogActions>
 </MudDialog>
 
-@code {
+@code  {
     [Parameter] public string Owner { get; set; } = string.Empty;
     [Parameter] public string Repo { get; set; } = string.Empty;
     [Parameter] public int TotalCount { get; set; }
@@ -338,7 +339,7 @@
         }
     }
 
-    void IDisposable.Dispose()
+    public void Dispose()
     {
         FilterService.FilterChanged -= OnFilterServiceChanged;
     }

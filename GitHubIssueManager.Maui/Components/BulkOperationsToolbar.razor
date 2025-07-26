@@ -2,6 +2,7 @@
 @using GitHubIssueManager.Maui.Services
 @using MudBlazor
 @inject GitHubService GitHubService
+@inject ILogger<BulkOperationsToolbar> Logger
 @rendermode InteractiveServer
 
 @if (SelectedIssues.Any())
