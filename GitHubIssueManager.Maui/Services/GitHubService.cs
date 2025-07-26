@@ -141,7 +141,7 @@ public class GitHubService
         }
     }
 
-    public async Task<GitHubIssue> UpdateIssueAsync(string owner, string repo, long issueNumber, string title, string body)
+    public async Task<GitHubIssue> UpdateIssueAsync(string owner, string repo, long issueNumber, string title, string body, IEnumerable<string>? labels = null, IEnumerable<string>? assignees = null, long? milestoneNumber = null)
     {
         try
         {
@@ -150,13 +150,100 @@ public class GitHubService
             {
                 throw new ArgumentException($"Issue number {issueNumber} exceeds the maximum supported value for GitHub API calls.", nameof(issueNumber));
             }
-            var issueUpdate = new IssueUpdate { Title = title, Body = body };
+
+            var issueUpdate = new IssueUpdate
+            {
+                Title = title,
+                Body = body
+            };
+
+            // Update labels if provided
+            if (labels != null)
+            {
+                issueUpdate.Labels.Clear();
+                foreach (var label in labels)
+                {
+                    issueUpdate.Labels.Add(label);
+                }
+            }
+
+            // Update assignees if provided
+            if (assignees != null)
+            {
+                issueUpdate.Assignees.Clear();
+                foreach (var assignee in assignees)
+                {
+                    issueUpdate.Assignees.Add(assignee);
+                }
+            }
+
+            // Update milestone if provided
+            if (milestoneNumber.HasValue)
+            {
+                if (milestoneNumber.Value == 0)
+                {
+                    issueUpdate.Milestone = null; // Remove milestone
+                }
+                else if (milestoneNumber.Value <= int.MaxValue)
+                {
+                    issueUpdate.Milestone = (int)milestoneNumber.Value;
+                }
+                else
+                {
+                    throw new ArgumentException($"Milestone number {milestoneNumber.Value} exceeds the maximum supported value.", nameof(milestoneNumber));
+                }
+            }
+
             var issue = await _client.Issue.Update(owner, repo, (int)issueNumber, issueUpdate);
             return MapToGitHubIssue(issue);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating issue #{IssueNumber} in {Owner}/{Repo}", issueNumber, owner, repo);
+            throw;
+        }
+    }
+
+    public async Task<IEnumerable<GitHubLabel>> GetLabelsAsync(string owner, string repo)
+    {
+        try
+        {
+            var labels = await _client.Issue.Labels.GetAllForRepository(owner, repo);
+            return labels.Select(l => new GitHubLabel
+            {
+                Id = l.Id,
+                Name = l.Name,
+                Color = l.Color,
+                Description = l.Description ?? string.Empty
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching labels for {Owner}/{Repo}", owner, repo);
+            throw;
+        }
+    }
+
+    public async Task<IEnumerable<GitHubMilestone>> GetMilestonesAsync(string owner, string repo)
+    {
+        try
+        {
+            var milestones = await _client.Issue.Milestone.GetAllForRepository(owner, repo);
+            return milestones.Select(m => new GitHubMilestone
+            {
+                Id = m.Id,
+                Title = m.Title,
+                Description = m.Description ?? string.Empty,
+                Number = m.Number,
+                State = m.State.ToString(),
+                DueOn = m.DueOn?.DateTime,
+                CreatedAt = m.CreatedAt.DateTime,
+                UpdatedAt = m.UpdatedAt?.DateTime ?? m.CreatedAt.DateTime
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching milestones for {Owner}/{Repo}", owner, repo);
             throw;
         }
     }
