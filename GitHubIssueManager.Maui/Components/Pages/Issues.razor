@@ -177,6 +177,13 @@ else if (filteredIssues.Any())
                                 }
                                 Copilot
                             </MudButton>
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Color="Color.Error"
+                                       StartIcon="@Icons.Material.Filled.Delete"
+                                       OnClick="() => ShowDeleteModal(issue)">
+                                Delete
+                            </MudButton>
                         </MudStack>
                     </MudStack>
                     
@@ -536,6 +543,53 @@ else
     </DialogActions>
 </MudDialog>
 
+<!-- Delete Issue Confirmation Modal -->
+<MudDialog @bind-Visible="ShowDeleteIssueModal" Options="@(new DialogOptions { MaxWidth = MaxWidth.Medium })">
+    <DialogContent>
+        <MudText Typo="Typo.h6" Color="Color.Error" Class="mb-3">
+            <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Class="mr-2" />
+            Confirm Issue Deletion
+        </MudText>
+        
+        @if (selectedIssue != null)
+        {
+            <MudText Typo="Typo.body1" Class="mb-3">
+                Are you sure you want to delete the following issue? This action will close the issue and cannot be undone.
+            </MudText>
+            
+            <MudPaper Elevation="1" Class="pa-3 mb-3" Style="background-color: var(--mud-palette-error-lighten);">
+                <MudText Typo="Typo.subtitle1" Style="font-weight: bold;">
+                    #@selectedIssue.Number @selectedIssue.Title
+                </MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
+                    Created by @selectedIssue.User.Login on @selectedIssue.CreatedAt.ToString("MMM dd, yyyy")
+                </MudText>
+            </MudPaper>
+            
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                <strong>Note:</strong> GitHub doesn't support permanent issue deletion. This will close the issue instead.
+            </MudText>
+        }
+    </DialogContent>
+    
+    <DialogActions>
+        <MudButton OnClick="CloseDeleteModal" 
+                   Variant="Variant.Text">
+            Cancel
+        </MudButton>
+        <MudButton OnClick="ConfirmDeleteIssue" 
+                   Variant="Variant.Filled" 
+                   Color="Color.Error" 
+                   Disabled="@isDeletingIssue">
+            @if (isDeletingIssue)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
+            }
+            Delete Issue
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
 @code {
     [Parameter] public string Owner { get; set; } = string.Empty;
     [Parameter] public string Repo { get; set; } = string.Empty;
@@ -577,6 +631,10 @@ else
     private string editIssueTitle = string.Empty;
     private string editIssueBody = string.Empty;
     private string? editErrorMessage = null;
+
+    // Delete issue-related fields
+    private bool ShowDeleteIssueModal = false;
+    private bool isDeletingIssue = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -1000,6 +1058,50 @@ MCP_JSON_END -->";
         editIssueTitle = string.Empty;
         editIssueBody = string.Empty;
         editErrorMessage = null;
+        StateHasChanged();
+    }
+
+    private void ShowDeleteModal(GitHubIssue issue)
+    {
+        selectedIssue = issue;
+        ShowDeleteIssueModal = true;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmDeleteIssue()
+    {
+        if (selectedIssue == null) return;
+
+        try
+        {
+            isDeletingIssue = true;
+            StateHasChanged();
+
+            await GitHubService.DeleteIssueAsync(Owner, Repo, selectedIssue.Number);
+            
+            // Remove from local lists
+            allIssues.RemoveAll(i => i.Number == selectedIssue.Number);
+            filteredIssues.RemoveAll(i => i.Number == selectedIssue.Number);
+            selectedIssues.RemoveAll(i => i.Number == selectedIssue.Number);
+            
+            CloseDeleteModal();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting issue: {ex.Message}";
+        }
+        finally
+        {
+            isDeletingIssue = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseDeleteModal()
+    {
+        ShowDeleteIssueModal = false;
+        selectedIssue = null;
         StateHasChanged();
     }
 

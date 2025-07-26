@@ -2,6 +2,7 @@
 @using GitHubIssueManager.Maui.Services
 @using MudBlazor
 @inject GitHubService GitHubService
+@inject ILogger<BulkOperationsToolbar> Logger
 @rendermode InteractiveServer
 
 @if (SelectedIssues.Any())
@@ -38,6 +39,14 @@
                            StartIcon="@Icons.Material.Filled.Close"
                            OnClick="ShowBulkCloseDialog">
                     Close
+                </MudButton>
+                
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Text"
+                           Color="Color.Error"
+                           StartIcon="@Icons.Material.Filled.Delete"
+                           OnClick="ShowBulkDeleteDialog">
+                    Delete
                 </MudButton>
                 
                 <MudButton Size="Size.Small"
@@ -211,6 +220,49 @@
     </DialogActions>
 </MudDialog>
 
+<!-- Bulk Delete Dialog -->
+<MudDialog @bind-Visible="ShowDeleteDialog">
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h6" Color="Color.Error">
+                <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Class="mr-2" />
+                Bulk Delete Issues
+            </MudText>
+            <MudAlert Severity="Severity.Error" Dense="true">
+                <MudText Typo="Typo.body2">
+                    <strong>Warning:</strong> This will delete @SelectedIssues.Count issue@(SelectedIssues.Count == 1 ? "" : "s"). 
+                    GitHub doesn't support permanent deletion, so this will close the issues instead.
+                </MudText>
+            </MudAlert>
+            
+            <MudText Typo="Typo.body2">Issues to be deleted:</MudText>
+            <MudStack Spacing="1" Class="max-height-300 overflow-y-auto">
+                @foreach (var issue in SelectedIssues.Take(10))
+                {
+                    <MudText Typo="Typo.body2">• #@issue.Number - @issue.Title</MudText>
+                }
+                @if (SelectedIssues.Count > 10)
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">... and @(SelectedIssues.Count - 10) more</MudText>
+                }
+            </MudStack>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => ShowDeleteDialog = false">Cancel</MudButton>
+        <MudButton Color="Color.Error" 
+                   Variant="Variant.Filled"
+                   OnClick="BulkDeleteIssues"
+                   Disabled="@isBulkProcessing">
+            @if (isBulkProcessing)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
+            }
+            Delete Issues
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
 <!-- Export Dialog -->
 <MudDialog @bind-Visible="ShowExportDialog">
     <DialogContent>
@@ -268,6 +320,7 @@
     private bool ShowAssignDialog = false;
     private bool ShowLabelDialog = false;
     private bool ShowCloseDialog = false;
+    private bool ShowDeleteDialog = false;
     private bool ShowExportDialog = false;
 
     // Processing states
@@ -302,6 +355,11 @@
     private void ShowBulkCloseDialog()
     {
         ShowCloseDialog = true;
+    }
+
+    private void ShowBulkDeleteDialog()
+    {
+        ShowDeleteDialog = true;
     }
 
     private void ShowExportDialogModal()
@@ -478,6 +536,30 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error in bulk close: {ex.Message}");
+        }
+        finally
+        {
+            isBulkProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task BulkDeleteIssues()
+    {
+        isBulkProcessing = true;
+        StateHasChanged();
+
+        try
+        {
+            var issueNumbers = SelectedIssues.Select(i => i.Number);
+            var updatedIssues = await GitHubService.BulkDeleteIssuesAsync(Owner, Repo, issueNumbers);
+            
+            await OnIssuesUpdated.InvokeAsync(updatedIssues);
+            ShowDeleteDialog = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in bulk delete: {ex.Message}");
         }
         finally
         {

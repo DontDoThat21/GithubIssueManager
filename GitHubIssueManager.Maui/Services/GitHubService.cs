@@ -703,6 +703,55 @@ public class GitHubService
         return results;
     }
 
+    /// <summary>
+    /// Delete (close) a single issue with confirmation
+    /// Note: GitHub API doesn't support true deletion, so this closes the issue
+    /// </summary>
+    public async Task<GitHubIssue> DeleteIssueAsync(string owner, string repo, long issueNumber)
+    {
+        try
+        {
+            ValidateIssueNumber(issueNumber);
+
+            var issueUpdate = new IssueUpdate { State = ItemState.Closed };
+            var issue = await _client.Issue.Update(owner, repo, (int)issueNumber, issueUpdate);
+            return MapToGitHubIssue(issue);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting (closing) issue #{IssueNumber} in {Owner}/{Repo}", issueNumber, owner, repo);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Bulk delete (close) issues with confirmation
+    /// Note: GitHub API doesn't support true deletion, so this closes the issues
+    /// </summary>
+    public async Task<List<GitHubIssue>> BulkDeleteIssuesAsync(string owner, string repo, IEnumerable<long> issueNumbers)
+    {
+        var results = new List<GitHubIssue>();
+
+        foreach (var issueNumber in issueNumbers)
+        {
+            try
+            {
+                ValidateIssueNumber(issueNumber);
+
+                var issueUpdate = new IssueUpdate { State = ItemState.Closed };
+                var issue = await _client.Issue.Update(owner, repo, (int)issueNumber, issueUpdate);
+                results.Add(MapToGitHubIssue(issue));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting (closing) issue #{IssueNumber} in bulk operation", issueNumber);
+                // Continue with other issues even if one fails
+            }
+        }
+
+        return results;
+    }
+
     private void ValidateAuthentication()
     {
         if (_client.Credentials == null || string.IsNullOrWhiteSpace(_client.Credentials.Password))
