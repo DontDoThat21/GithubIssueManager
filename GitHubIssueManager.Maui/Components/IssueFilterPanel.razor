@@ -20,21 +20,19 @@
                 }
             </MudStack>
             <MudStack Row="true" Spacing="1">
-                <MudButton Size="Size.Small" 
-                           Variant="Variant.Text" 
-                           Color="Color.Secondary"
-                           StartIcon="@Icons.Material.Filled.Refresh"
-                           OnClick="RefreshData">
+                <button type="button" 
+                        class="btn btn-link btn-sm text-secondary"
+                        @onclick="RefreshData">
+                    <i class="bi bi-arrow-clockwise me-1"></i>
                     Refresh
-                </MudButton>
-                <MudButton Size="Size.Small" 
-                           Variant="Variant.Text" 
-                           Color="Color.Warning"
-                           StartIcon="@Icons.Material.Filled.Clear"
-                           OnClick="ClearFilters"
-                           Disabled="@(!CurrentFilter.HasActiveFilters)">
+                </button>
+                <button type="button" 
+                        class="btn btn-link btn-sm text-warning"
+                        @onclick="ClearFilters"
+                        disabled="@(!CurrentFilter.HasActiveFilters)">
+                    <i class="bi bi-x-circle me-1"></i>
                     Clear All
-                </MudButton>
+                </button>
                 <MudIconButton Icon="@(IsExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
                                OnClick="ToggleExpanded" />
             </MudStack>
@@ -244,19 +242,18 @@
                         <MudText Typo="Typo.subtitle2">Saved Filters:</MudText>
                         @foreach (var savedFilter in SavedFilters.Take(3))
                         {
-                            <MudButton Size="Size.Small" 
-                                       Variant="Variant.Text" 
-                                       Color="Color.Info"
-                                       OnClick="() => FilterService.LoadSavedFilter(savedFilter.Id)">
+                            <button type="button" 
+                                    class="btn btn-link btn-sm text-info"
+                                    @onclick="() => FilterService.LoadSavedFilter(savedFilter.Id)">
                                 @savedFilter.Name
-                            </MudButton>
+                            </button>
                         }
-                        <MudButton Size="Size.Small" 
-                                   Variant="Variant.Text"
-                                   StartIcon="@Icons.Material.Filled.Save"
-                                   OnClick="ShowSaveFilterDialog">
+                        <button type="button" 
+                                class="btn btn-link btn-sm"
+                                @onclick="ShowSaveFilterDialog">
+                            <i class="bi bi-save me-1"></i>
                             Save Current
-                        </MudButton>
+                        </button>
                     </MudStack>
                 }
             </MudStack>
@@ -276,13 +273,17 @@
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="() => ShowSaveDialog = false">Cancel</MudButton>
-        <MudButton Color="Color.Primary" 
-                   Variant="Variant.Filled"
-                   OnClick="SaveCurrentFilter"
-                   Disabled="@string.IsNullOrWhiteSpace(SaveFilterName)">
+        <button type="button" 
+                class="btn btn-outline-secondary"
+                @onclick="() => ShowSaveDialog = false">
+            Cancel
+        </button>
+        <button type="button" 
+                class="btn btn-primary"
+                @onclick="SaveCurrentFilter"
+                disabled="@string.IsNullOrWhiteSpace(SaveFilterName)">
             Save
-        </MudButton>
+        </button>
     </DialogActions>
 </MudDialog>
 
