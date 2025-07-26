@@ -338,7 +338,7 @@
         }
     }
 
-    public void Dispose()
+    void IDisposable.Dispose()
     {
         FilterService.FilterChanged -= OnFilterServiceChanged;
     }
