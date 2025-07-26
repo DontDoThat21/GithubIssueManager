@@ -570,10 +570,6 @@ public class GitHubService
             try
             {
                 ValidateIssueNumber(issueNumber);
-                if (issueNumber > int.MaxValue)
-                {
-                    throw new ArgumentException($"Issue number {issueNumber} exceeds the maximum supported value for GitHub API calls.", nameof(issueNumber));
-                }
 
                 var issueUpdate = new IssueUpdate { State = ItemState.Closed };
                 var issue = await _client.Issue.Update(owner, repo, (int)issueNumber, issueUpdate);
