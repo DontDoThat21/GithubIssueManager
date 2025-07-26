@@ -507,14 +507,14 @@
             
             // In a browser context, we'd need to use JavaScript to download the file
             // For now, we'll log the content
-            Console.WriteLine($"Exporting {SelectedIssues.Count} issues to {filename}");
-            Console.WriteLine(content);
+            Logger.LogInformation($"Exporting {SelectedIssues.Count} issues to {filename}");
+            Logger.LogInformation(content);
             
             ShowExportDialog = false;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error exporting issues: {ex.Message}");
+            Logger.LogError($"Error exporting issues: {ex.Message}");
         }
         finally
         {
