@@ -103,27 +103,6 @@ public class GitHubIssue
 }
 
 /// <summary>
-/// Represents a GitHub label with Int64 ID support
-/// </summary>
-public class GitHubLabel
-{
-    [JsonPropertyName("id")]
-    public long Id { get; set; }
-
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
-
-    [JsonPropertyName("color")]
-    public string Color { get; set; } = string.Empty;
-
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
-
-    [JsonPropertyName("default")]
-    public bool IsDefault { get; set; }
-}
-
-/// <summary>
 /// Represents a GitHub milestone with Int64 ID support
 /// </summary>
 public class GitHubMilestone

@@ -479,6 +479,230 @@ public class GitHubService
         }
     }
 
+    public async Task<IEnumerable<GitHubLabel>> GetLabelsAsync(string owner, string repo)
+    {
+        try
+        {
+            var labels = await _client.Issue.Labels.GetAllForRepository(owner, repo);
+            return labels.Select(l => new GitHubLabel
+            {
+                Id = l.Id,
+                Name = l.Name,
+                Color = l.Color,
+                Description = l.Description ?? string.Empty
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching labels for {Owner}/{Repo}", owner, repo);
+            throw;
+        }
+    }
+
+    public async Task<IEnumerable<GitHubMilestone>> GetMilestonesAsync(string owner, string repo)
+    {
+        try
+        {
+            var milestones = await _client.Issue.Milestone.GetAllForRepository(owner, repo);
+            return milestones.Select(m => new GitHubMilestone
+            {
+                Id = m.Id,
+                Title = m.Title,
+                Description = m.Description ?? string.Empty,
+                Number = m.Number,
+                State = m.State.ToString(),
+                DueOn = m.DueOn?.DateTime,
+                CreatedAt = m.CreatedAt.DateTime,
+                UpdatedAt = m.UpdatedAt?.DateTime ?? m.CreatedAt.DateTime
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching milestones for {Owner}/{Repo}", owner, repo);
+            throw;
+        }
+    }
+
+    public async Task<IEnumerable<GitHubUser>> GetContributorsAsync(string owner, string repo)
+    {
+        try
+        {
+            var contributors = await _client.Repository.GetAllContributors(owner, repo);
+            return contributors.Select(c => new GitHubUser
+            {
+                Id = c.Id,
+                Login = c.Login,
+                AvatarUrl = c.AvatarUrl ?? string.Empty,
+                HtmlUrl = c.HtmlUrl ?? string.Empty,
+                Type = c.Type.ToString()
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching contributors for {Owner}/{Repo}", owner, repo);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Get issues with advanced filtering support
+    /// </summary>
+    public async Task<IEnumerable<GitHubIssue>> GetIssuesAsync(string owner, string repo, 
+        string state = "all", string? assignee = null, string? milestone = null, 
+        string? labels = null, string? since = null, int page = 1, int perPage = 100)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(_token))
+                throw new UnauthorizedAccessException("GitHub authentication is required. Please configure your Personal Access Token.");
+
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("GitHubIssueManager");
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);
+
+            var queryParams = new List<string>
+            {
+                $"state={state}",
+                $"page={page}",
+                $"per_page={perPage}"
+            };
+
+            if (!string.IsNullOrWhiteSpace(assignee))
+                queryParams.Add($"assignee={Uri.EscapeDataString(assignee)}");
+
+            if (!string.IsNullOrWhiteSpace(milestone))
+                queryParams.Add($"milestone={Uri.EscapeDataString(milestone)}");
+
+            if (!string.IsNullOrWhiteSpace(labels))
+                queryParams.Add($"labels={Uri.EscapeDataString(labels)}");
+
+            if (!string.IsNullOrWhiteSpace(since))
+                queryParams.Add($"since={Uri.EscapeDataString(since)}");
+
+            var url = $"https://api.github.com/repos/{owner}/{repo}/issues?{string.Join("&", queryParams)}";
+            var response = await httpClient.GetAsync(url);
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("GitHub API error fetching issues for {Owner}/{Repo}: {StatusCode} {Message}", owner, repo, response.StatusCode, errorContent);
+                throw response.StatusCode switch
+                {
+                    System.Net.HttpStatusCode.Unauthorized => new UnauthorizedAccessException("GitHub authentication failed. Please check your Personal Access Token and ensure it has the required 'repo' permissions."),
+                    System.Net.HttpStatusCode.Forbidden => new UnauthorizedAccessException("Access forbidden. Your GitHub token may not have permission to access this repository, or you may have exceeded the API rate limit."),
+                    System.Net.HttpStatusCode.NotFound => new ArgumentException($"Repository '{owner}/{repo}' not found. Please verify the repository name and that you have access to it."),
+                    _ => new InvalidOperationException($"GitHub API error: {errorContent}")
+                };
+            }
+            
+            var json = await response.Content.ReadAsStringAsync();
+            var issues = JsonSerializer.Deserialize<List<GitHubIssue>>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+            return issues ?? new List<GitHubIssue>();
+        }
+        catch (HttpRequestException httpEx)
+        {
+            _logger.LogError(httpEx, "Network error fetching issues for {Owner}/{Repo}", owner, repo);
+            throw new InvalidOperationException("Unable to connect to GitHub API. Please check your internet connection and try again. If the problem persists, GitHub services may be temporarily unavailable.");
+        }
+        catch (TaskCanceledException tcEx)
+        {
+            _logger.LogError(tcEx, "Timeout error fetching issues for {Owner}/{Repo}", owner, repo);
+            throw new TimeoutException("Request to GitHub API timed out. Please try again later.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error fetching issues for {Owner}/{Repo}", owner, repo);
+            throw new InvalidOperationException($"An unexpected error occurred while fetching issues: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Bulk assign issues to users
+    /// </summary>
+    public async Task<List<GitHubIssue>> BulkAssignIssuesAsync(string owner, string repo, 
+        IEnumerable<long> issueNumbers, IEnumerable<string> assignees)
+    {
+        var results = new List<GitHubIssue>();
+        var assigneeList = assignees.ToList();
+
+        foreach (var issueNumber in issueNumbers)
+        {
+            try
+            {
+                var updatedIssue = await AssignIssueAsync(owner, repo, issueNumber, assigneeList);
+                results.Add(updatedIssue);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error assigning issue #{IssueNumber} in bulk operation", issueNumber);
+                // Continue with other issues even if one fails
+            }
+        }
+
+        return results;
+    }
+
+    /// <summary>
+    /// Bulk close issues
+    /// </summary>
+    public async Task<List<GitHubIssue>> BulkCloseIssuesAsync(string owner, string repo, IEnumerable<long> issueNumbers)
+    {
+        var results = new List<GitHubIssue>();
+
+        foreach (var issueNumber in issueNumbers)
+        {
+            try
+            {
+                ValidateIssueNumber(issueNumber);
+
+                var issueUpdate = new IssueUpdate { State = ItemState.Closed };
+                var issue = await _client.Issue.Update(owner, repo, (int)issueNumber, issueUpdate);
+                results.Add(MapToGitHubIssue(issue));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error closing issue #{IssueNumber} in bulk operation", issueNumber);
+                // Continue with other issues even if one fails
+            }
+        }
+
+        return results;
+    }
+
+    /// <summary>
+    /// Bulk reopen issues
+    /// </summary>
+    public async Task<List<GitHubIssue>> BulkReopenIssuesAsync(string owner, string repo, IEnumerable<long> issueNumbers)
+    {
+        var results = new List<GitHubIssue>();
+
+        foreach (var issueNumber in issueNumbers)
+        {
+            try
+            {
+                ValidateIssueNumber(issueNumber);
+                if (issueNumber > int.MaxValue)
+                {
+                    throw new ArgumentException($"Issue number {issueNumber} exceeds the maximum supported value for GitHub API calls.", nameof(issueNumber));
+                }
+
+                var issueUpdate = new IssueUpdate { State = ItemState.Open };
+                var issue = await _client.Issue.Update(owner, repo, (int)issueNumber, issueUpdate);
+                results.Add(MapToGitHubIssue(issue));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reopening issue #{IssueNumber} in bulk operation", issueNumber);
+                // Continue with other issues even if one fails
+            }
+        }
+
+        return results;
+    }
+
     private void ValidateAuthentication()
     {
         if (_client.Credentials == null || string.IsNullOrWhiteSpace(_client.Credentials.Password))
