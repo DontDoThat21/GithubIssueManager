@@ -169,7 +169,7 @@ public class IssueExportService
             ClosedIssues = issueList.Count(i => i.IsClosed),
             UniqueAssignees = issueList.SelectMany(i => i.Assignees).Select(a => a.Login).Distinct().Count(),
             UniqueLabels = issueList.SelectMany(i => i.Labels).Select(l => l.Name).Distinct().Count(),
-            DateRange = issueList.Any() ? new
+            DateRange = issueList.Any() ? new DateRangeInfo
             {
                 Earliest = issueList.Min(i => i.CreatedAt),
                 Latest = issueList.Max(i => i.UpdatedAt)
@@ -182,6 +182,15 @@ public class IssueExportService
         if (string.IsNullOrEmpty(value)) return value;
         return value.Replace("\"", "\"\"");
     }
+}
+
+/// <summary>
+/// Represents a date range with earliest and latest dates
+/// </summary>
+public class DateRangeInfo
+{
+    public DateTime Earliest { get; set; }
+    public DateTime Latest { get; set; }
 }
 
 /// <summary>

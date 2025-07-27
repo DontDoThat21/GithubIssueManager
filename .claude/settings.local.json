@@ -1,12 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:docs.anthropic.com)"
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(dotnet run)",
+      "Bash(dotnet build)"
     ],
     "deny": []
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "github-issue-manager"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }
