@@ -1,25 +1,26 @@
 @using GitHubIssueManager.Maui.Models
 @using GitHubIssueManager.Maui.Services
-@using MudBlazor
 @inject IssueFilterService FilterService
 @inject GitHubService GitHubService
 @rendermode InteractiveServer
 @implements IDisposable
 
-<MudPaper Elevation="2" Class="pa-4 mb-4">
-    <MudStack Spacing="3">
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
         <!-- Header -->
-        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                <MudIcon Icon="@Icons.Material.Filled.FilterList" Color="Color.Primary" />
-                <MudText Typo="Typo.h6">Advanced Filters</MudText>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-funnel text-primary me-2"></i>
+                <h6 class="mb-0">Advanced Filters</h6>
                 @if (CurrentFilter.HasActiveFilters)
                 {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Info" 
-                             Text="@($"{FilteredCount} of {TotalCount} issues")" />
+                    <span class="badge bg-info ms-2">
+                        @FilteredCount of @TotalCount issues
+                    </span>
                 }
-            </MudStack>
-            <MudStack Row="true" Spacing="1">
+            </div>
+            
+            <div class="d-flex gap-1">
                 <button type="button" 
                         class="btn btn-link btn-sm text-secondary"
                         @onclick="RefreshData">
@@ -33,213 +34,206 @@
                     <i class="bi bi-x-circle me-1"></i>
                     Clear All
                 </button>
-                <MudIconButton Icon="@(IsExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
-                               OnClick="ToggleExpanded" />
-            </MudStack>
-        </MudStack>
+                <button type="button" 
+                        class="btn btn-link btn-sm"
+                        @onclick="ToggleExpanded">
+                    <i class="bi bi-@(IsExpanded ? "chevron-up" : "chevron-down")"></i>
+                </button>
+            </div>
+        </div>
 
         <!-- Search Bar (Always Visible) -->
-        <MudTextField @bind-Value="SearchQuery"
-                      Label="Search issues..."
-                      Placeholder="Search by title, description, or assignee..."
-                      Variant="Variant.Outlined"
-                      Adornment="Adornment.Start"
-                      AdornmentIcon="@Icons.Material.Filled.Search"
-                      FullWidth="true"
-                      Immediate="true"
-                      DebounceInterval="300"
-                      OnDebounceIntervalElapsed="OnSearchChanged" />
+        <div class="mb-3">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control" 
+                       @bind="SearchQuery" 
+                       @oninput="OnSearchChanged"
+                       placeholder="Search by title, description, or assignee..." />
+            </div>
+        </div>
 
         <!-- Active Filters Display -->
         @if (CurrentFilter.HasActiveFilters)
         {
-            <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center">
-                <MudText Typo="Typo.body2" Color="Color.Secondary">Active filters:</MudText>
+            <div class="d-flex flex-wrap gap-1 align-items-center mb-3">
+                <small class="text-muted me-2">Active filters:</small>
                 
                 @if (CurrentFilter.State != IssueState.Open)
                 {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" 
-                             OnClose="() => RemoveStateFilter()"
-                             Text="@($"State: {CurrentFilter.State}")" />
+                    <span class="badge bg-primary">
+                        State: @CurrentFilter.State
+                        <button type="button" class="btn-close btn-close-white ms-1" 
+                                style="font-size: 0.6em;" @onclick="RemoveStateFilter"></button>
+                    </span>
                 }
                 
                 @foreach (var assignee in CurrentFilter.Assignees)
                 {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Secondary" 
-                             OnClose="() => RemoveAssigneeFilter(assignee)"
-                             Text="@($"Assignee: {assignee}")" />
+                    <span class="badge bg-secondary">
+                        Assignee: @assignee
+                        <button type="button" class="btn-close btn-close-white ms-1" 
+                                style="font-size: 0.6em;" @onclick="() => RemoveAssigneeFilter(assignee)"></button>
+                    </span>
                 }
                 
                 @foreach (var label in CurrentFilter.Labels)
                 {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Info" 
-                             OnClose="() => RemoveLabelFilter(label)"
-                             Text="@($"Label: {label}")" />
+                    <span class="badge bg-info">
+                        Label: @label
+                        <button type="button" class="btn-close btn-close-white ms-1" 
+                                style="font-size: 0.6em;" @onclick="() => RemoveLabelFilter(label)"></button>
+                    </span>
                 }
                 
                 @if (!string.IsNullOrWhiteSpace(CurrentFilter.Milestone))
                 {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Success" 
-                             OnClose="() => RemoveMilestoneFilter()"
-                             Text="@($"Milestone: {CurrentFilter.Milestone}")" />
+                    <span class="badge bg-success">
+                        Milestone: @CurrentFilter.Milestone
+                        <button type="button" class="btn-close btn-close-white ms-1" 
+                                style="font-size: 0.6em;" @onclick="RemoveMilestoneFilter"></button>
+                    </span>
                 }
                 
                 @if (!string.IsNullOrWhiteSpace(CurrentFilter.Author))
                 {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" 
-                             OnClose="() => RemoveAuthorFilter()"
-                             Text="@($"Author: {CurrentFilter.Author}")" />
+                    <span class="badge bg-warning text-dark">
+                        Author: @CurrentFilter.Author
+                        <button type="button" class="btn-close ms-1" 
+                                style="font-size: 0.6em;" @onclick="RemoveAuthorFilter"></button>
+                    </span>
                 }
 
                 @if (CurrentFilter.CreatedAfter.HasValue || CurrentFilter.CreatedBefore.HasValue)
                 {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Error" 
-                             OnClose="() => RemoveDateFilter()"
-                             Text="@GetDateFilterText()" />
+                    <span class="badge bg-danger">
+                        @GetDateFilterText()
+                        <button type="button" class="btn-close btn-close-white ms-1" 
+                                style="font-size: 0.6em;" @onclick="RemoveDateFilter"></button>
+                    </span>
                 }
-            </MudStack>
+            </div>
         }
 
         <!-- Expanded Filters -->
-        <MudCollapse Expanded="IsExpanded">
-            <MudStack Spacing="3">
+        @if (IsExpanded)
+        {
+            <div class="border-top pt-3">
                 <!-- Filter Row 1: State, Sort, and Quick Filters -->
-                <MudGrid>
-                    <MudItem md="3" sm="6" xs="12">
-                        <MudSelect @bind-Value="SelectedState"
-                                   Label="Issue State"
-                                   Variant="Variant.Outlined"
-                                   Dense="true"
-                                   OnSelectionChanged="OnStateChanged">
-                            <MudSelectItem Value="IssueState.Open">Open Issues</MudSelectItem>
-                            <MudSelectItem Value="IssueState.Closed">Closed Issues</MudSelectItem>
-                            <MudSelectItem Value="IssueState.All">All Issues</MudSelectItem>
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem md="3" sm="6" xs="12">
-                        <MudSelect @bind-Value="SelectedSortBy"
-                                   Label="Sort By"
-                                   Variant="Variant.Outlined"
-                                   Dense="true"
-                                   OnSelectionChanged="OnSortChanged">
-                            <MudSelectItem Value="IssueSortBy.Updated">Recently Updated</MudSelectItem>
-                            <MudSelectItem Value="IssueSortBy.Created">Recently Created</MudSelectItem>
-                            <MudSelectItem Value="IssueSortBy.Comments">Most Comments</MudSelectItem>
-                            <MudSelectItem Value="IssueSortBy.Title">Title (A-Z)</MudSelectItem>
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem md="3" sm="6" xs="12">
-                        <MudSelect @bind-Value="SelectedSortDirection"
-                                   Label="Sort Direction"
-                                   Variant="Variant.Outlined"
-                                   Dense="true"
-                                   OnSelectionChanged="OnSortChanged">
-                            <MudSelectItem Value="AppSortDirection.Descending">Descending</MudSelectItem>
-                            <MudSelectItem Value="AppSortDirection.Ascending">Ascending</MudSelectItem>
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem md="3" sm="6" xs="12">
-                        <MudTextField @bind-Value="AuthorQuery"
-                                      Label="Author"
-                                      Placeholder="Filter by author..."
-                                      Variant="Variant.Outlined"
-                                      Dense="true"
-                                      Immediate="true"
-                                      DebounceInterval="300"
-                                      OnDebounceIntervalElapsed="OnAuthorChanged" />
-                    </MudItem>
-                </MudGrid>
+                <div class="row mb-3">
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <label class="form-label">Issue State</label>
+                        <select class="form-select form-select-sm" @bind="SelectedState" @bind:after="OnStateChanged">
+                            <option value="@IssueState.Open">Open Issues</option>
+                            <option value="@IssueState.Closed">Closed Issues</option>
+                            <option value="@IssueState.All">All Issues</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <label class="form-label">Sort By</label>
+                        <select class="form-select form-select-sm" @bind="SelectedSortBy" @bind:after="OnSortChanged">
+                            <option value="@IssueSortBy.Updated">Recently Updated</option>
+                            <option value="@IssueSortBy.Created">Recently Created</option>
+                            <option value="@IssueSortBy.Comments">Most Comments</option>
+                            <option value="@IssueSortBy.Title">Title (A-Z)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <label class="form-label">Sort Direction</label>
+                        <select class="form-select form-select-sm" @bind="SelectedSortDirection" @bind:after="OnSortChanged">
+                            <option value="@AppSortDirection.Descending">Descending</option>
+                            <option value="@AppSortDirection.Ascending">Ascending</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <label class="form-label">Author</label>
+                        <input type="text" class="form-control form-control-sm" 
+                               @bind="AuthorQuery" 
+                               @oninput="OnAuthorChanged"
+                               placeholder="Filter by author..." />
+                    </div>
+                </div>
 
                 <!-- Filter Row 2: Assignees and Labels -->
-                <MudGrid>
-                    <MudItem md="6" xs="12">
-                        <MudAutocomplete T="string" 
-                                         @bind-Value="SelectedAssignee"
-                                         Label="Add Assignee Filter"
-                                         Placeholder="Type to search assignees..."
-                                         SearchFunc="SearchAssignees"
-                                         Variant="Variant.Outlined"
-                                         Dense="true"
-                                         OnSelectionChanged="OnAssigneeSelected"
-                                         ResetValueOnEmptyText="true"
-                                         CoerceText="false" />
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Add Assignee Filter</label>
+                        <input type="text" class="form-control form-control-sm" 
+                               @bind="SelectedAssignee" 
+                               @onkeypress="@((KeyboardEventArgs e) => { if (e.Key == "Enter") OnAssigneeSelected(); })"
+                               placeholder="Type assignee name and press Enter..." />
                         
                         @if (CurrentFilter.Assignees.Any())
                         {
-                            <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap" Class="mt-2">
+                            <div class="d-flex flex-wrap gap-1 mt-2">
                                 @foreach (var assignee in CurrentFilter.Assignees)
                                 {
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Secondary" 
-                                             OnClose="() => RemoveAssigneeFilter(assignee)"
-                                             Text="@assignee" />
+                                    <span class="badge bg-secondary">
+                                        @assignee
+                                        <button type="button" class="btn-close btn-close-white ms-1" 
+                                                style="font-size: 0.6em;" @onclick="() => RemoveAssigneeFilter(assignee)"></button>
+                                    </span>
                                 }
-                            </MudStack>
+                            </div>
                         }
-                    </MudItem>
-                    <MudItem md="6" xs="12">
-                        <MudAutocomplete T="string" 
-                                         @bind-Value="SelectedLabel"
-                                         Label="Add Label Filter"
-                                         Placeholder="Type to search labels..."
-                                         SearchFunc="SearchLabels"
-                                         Variant="Variant.Outlined"
-                                         Dense="true"
-                                         OnSelectionChanged="OnLabelSelected"
-                                         ResetValueOnEmptyText="true"
-                                         CoerceText="false" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Add Label Filter</label>
+                        <input type="text" class="form-control form-control-sm" 
+                               @bind="SelectedLabel" 
+                               @onkeypress="@((KeyboardEventArgs e) => { if (e.Key == "Enter") OnLabelSelected(); })"
+                               placeholder="Type label name and press Enter..." />
                         
                         @if (CurrentFilter.Labels.Any())
                         {
-                            <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap" Class="mt-2">
+                            <div class="d-flex flex-wrap gap-1 mt-2">
                                 @foreach (var label in CurrentFilter.Labels)
                                 {
                                     var labelColor = AvailableLabels.FirstOrDefault(l => l.Name == label)?.Color ?? "cccccc";
-                                    <MudChip T="string" Size="Size.Small" 
-                                             Style="@($"background-color: #{labelColor}; color: {GetContrastColor(labelColor)}")"
-                                             OnClose="() => RemoveLabelFilter(label)"
-                                             Text="@label" />
+                                    <span class="badge" 
+                                          style="background-color: #@labelColor; color: @GetContrastColor(labelColor)">
+                                        @label
+                                        <button type="button" class="btn-close ms-1" 
+                                                style="font-size: 0.6em; filter: @(GetContrastColor(labelColor) == "white" ? "invert(1)" : "none");" 
+                                                @onclick="() => RemoveLabelFilter(label)"></button>
+                                    </span>
                                 }
-                            </MudStack>
+                            </div>
                         }
-                    </MudItem>
-                </MudGrid>
+                    </div>
+                </div>
 
                 <!-- Filter Row 3: Milestone and Date Range -->
-                <MudGrid>
-                    <MudItem md="4" xs="12">
-                        <MudAutocomplete T="string" 
-                                         @bind-Value="SelectedMilestone"
-                                         Label="Milestone"
-                                         Placeholder="Select milestone..."
-                                         SearchFunc="SearchMilestones"
-                                         Variant="Variant.Outlined"
-                                         Dense="true"
-                                         OnSelectionChanged="OnMilestoneSelected"
-                                         ResetValueOnEmptyText="true"
-                                         CoerceText="false" />
-                    </MudItem>
-                    <MudItem md="4" xs="12">
-                        <MudDatePicker @bind-Date="CreatedAfter"
-                                       Label="Created After"
-                                       Variant="Variant.Outlined"
-                                       Dense="true"
-                                       OnDateChanged="OnDateChanged" />
-                    </MudItem>
-                    <MudItem md="4" xs="12">
-                        <MudDatePicker @bind-Date="CreatedBefore"
-                                       Label="Created Before"
-                                       Variant="Variant.Outlined"
-                                       Dense="true"
-                                       OnDateChanged="OnDateChanged" />
-                    </MudItem>
-                </MudGrid>
+                <div class="row mb-3">
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label">Milestone</label>
+                        <input type="text" class="form-control form-control-sm" 
+                               @bind="SelectedMilestone" 
+                               @onkeypress="@((KeyboardEventArgs e) => { if (e.Key == "Enter") OnMilestoneSelected(); })"
+                               placeholder="Type milestone and press Enter..." />
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label">Created After</label>
+                        <input type="date" class="form-control form-control-sm" 
+                               value="@(CreatedAfter?.ToString("yyyy-MM-dd"))"
+                               @onchange="OnCreatedAfterChanged" />
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label">Created Before</label>
+                        <input type="date" class="form-control form-control-sm" 
+                               value="@(CreatedBefore?.ToString("yyyy-MM-dd"))"
+                               @onchange="OnCreatedBeforeChanged" />
+                    </div>
+                </div>
 
                 <!-- Saved Filters -->
                 @if (SavedFilters.Any())
                 {
-                    <MudDivider />
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                        <MudText Typo="Typo.subtitle2">Saved Filters:</MudText>
+                    <hr>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <h6 class="mb-0">Saved Filters:</h6>
                         @foreach (var savedFilter in SavedFilters.Take(3))
                         {
                             <button type="button" 
@@ -254,38 +248,46 @@
                             <i class="bi bi-save me-1"></i>
                             Save Current
                         </button>
-                    </MudStack>
+                    </div>
                 }
-            </MudStack>
-        </MudCollapse>
-    </MudStack>
-</MudPaper>
+            </div>
+        }
+    </div>
+</div>
 
 <!-- Save Filter Dialog -->
-<MudDialog @bind-Visible="ShowSaveDialog">
-    <DialogContent>
-        <MudStack Spacing="3">
-            <MudText Typo="Typo.h6">Save Filter</MudText>
-            <MudTextField @bind-Value="SaveFilterName"
-                          Label="Filter Name"
-                          Placeholder="Enter a name for this filter..."
-                          Variant="Variant.Outlined" />
-        </MudStack>
-    </DialogContent>
-    <DialogActions>
-        <button type="button" 
-                class="btn btn-outline-secondary"
-                @onclick="() => ShowSaveDialog = false">
-            Cancel
-        </button>
-        <button type="button" 
-                class="btn btn-primary"
-                @onclick="SaveCurrentFilter"
-                disabled="@string.IsNullOrWhiteSpace(SaveFilterName)">
-            Save
-        </button>
-    </DialogActions>
-</MudDialog>
+@if (ShowSaveDialog)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Save Filter</h5>
+                    <button type="button" class="btn-close" @onclick="() => ShowSaveDialog = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Filter Name</label>
+                        <input type="text" class="form-control" 
+                               @bind="SaveFilterName" 
+                               placeholder="Enter a name for this filter..." />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="() => ShowSaveDialog = false">
+                        Cancel
+                    </button>
+                    <button type="button" 
+                            class="btn btn-primary"
+                            @onclick="SaveCurrentFilter"
+                            disabled="@string.IsNullOrWhiteSpace(SaveFilterName)">
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @code  {
     [Parameter] public string Owner { get; set; } = string.Empty;
@@ -425,8 +427,33 @@
     private void OnStateChanged() => UpdateFilter();
     private void OnSortChanged() => UpdateFilter();
     private void OnAuthorChanged() => UpdateFilter();
-    private void OnDateChanged() => UpdateFilter();
     private void OnMilestoneSelected() => UpdateFilter();
+
+    private void OnCreatedAfterChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var date))
+        {
+            CreatedAfter = date;
+        }
+        else
+        {
+            CreatedAfter = null;
+        }
+        UpdateFilter();
+    }
+
+    private void OnCreatedBeforeChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var date))
+        {
+            CreatedBefore = date;
+        }
+        else
+        {
+            CreatedBefore = null;
+        }
+        UpdateFilter();
+    }
 
     private void OnAssigneeSelected()
     {
@@ -505,37 +532,6 @@
     {
         await LoadFilterData();
         await OnFilterChanged.InvokeAsync();
-    }
-
-    // Search functions for autocomplete
-    private async Task<IEnumerable<string>> SearchAssignees(string value, CancellationToken token)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return AvailableAssignees.Select(a => a.Login);
-        
-        return AvailableAssignees
-            .Where(a => a.Login.Contains(value, StringComparison.OrdinalIgnoreCase))
-            .Select(a => a.Login);
-    }
-
-    private async Task<IEnumerable<string>> SearchLabels(string value, CancellationToken token)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return AvailableLabels.Select(l => l.Name);
-        
-        return AvailableLabels
-            .Where(l => l.Name.Contains(value, StringComparison.OrdinalIgnoreCase))
-            .Select(l => l.Name);
-    }
-
-    private async Task<IEnumerable<string>> SearchMilestones(string value, CancellationToken token)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return AvailableMilestones.Select(m => m.Title);
-        
-        return AvailableMilestones
-            .Where(m => m.Title.Contains(value, StringComparison.OrdinalIgnoreCase))
-            .Select(m => m.Title);
     }
 
     // Helper methods

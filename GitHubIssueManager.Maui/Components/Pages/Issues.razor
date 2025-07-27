@@ -1,7 +1,6 @@
 @page "/issues/{owner}/{repo}"
 @using GitHubIssueManager.Maui.Models
 @using GitHubIssueManager.Maui.Services
-@using MudBlazor
 @inject GitHubService GitHubService
 @inject AuthenticationService AuthService
 @inject RepositoryService RepositoryService
@@ -11,71 +10,82 @@
 <PageTitle>@Owner/@Repo - Issues</PageTitle>
 
 <!-- Repository Detail Header Section -->
-<MudPaper Elevation="2" Class="pa-4 mb-4" Style="background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);">
-    <MudStack Spacing="1">
-        <MudBreadcrumbs Separator="@Icons.Material.Filled.ChevronRight">
-            <MudBreadcrumbItem Href="/">Home</MudBreadcrumbItem>
-            <MudBreadcrumbItem Href="/repositories">Repositories</MudBreadcrumbItem>
-            <MudBreadcrumbItem Disabled="true">@Owner/@Repo</MudBreadcrumbItem>
-        </MudBreadcrumbs>
-        <MudDivider />
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-            <MudIcon Icon="@Icons.Material.Filled.Folder" Color="Color.Primary" Size="Size.Large" />
-            <MudText Typo="Typo.h4" Color="Color.Default">@Owner/@Repo</MudText>
+<div class="card shadow-sm mb-4" style="background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%); color: white;">
+    <div class="card-body p-4">
+        <!-- Breadcrumbs -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb text-light mb-2">
+                <li class="breadcrumb-item"><a href="/" class="text-light">Home</a></li>
+                <li class="breadcrumb-item"><a href="/repositories" class="text-light">Repositories</a></li>
+                <li class="breadcrumb-item active text-secondary" aria-current="page">@Owner/@Repo</li>
+            </ol>
+        </nav>
+        <hr class="border-secondary">
+        
+        <!-- Repository Title -->
+        <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-folder text-primary fs-2 me-2"></i>
+            <h4 class="mb-0 text-white">@Owner/@Repo</h4>
             @if (repositoryInfo != null && repositoryInfo.Private)
             {
-                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Text="Private" />
+                <span class="badge bg-warning text-dark ms-2">Private</span>
             }
-        </MudStack>
+        </div>
+        
         @if (repositoryInfo != null && !string.IsNullOrEmpty(repositoryInfo.Description))
         {
-            <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-1">@repositoryInfo.Description</MudText>
+            <p class="text-secondary mt-2">@repositoryInfo.Description</p>
         }
-        <MudStack Row="true" Spacing="4" AlignItems="AlignItems.Center" Class="mt-3">
+        
+        <!-- Repository Stats -->
+        <div class="d-flex flex-wrap gap-4 align-items-center mt-3">
             @if (repositoryInfo != null)
             {
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                    <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Small" />
-                    <MudText Typo="Typo.body2">@repositoryInfo.StargazersCount</MudText>
-                </MudStack>
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                    <MudIcon Icon="@Icons.Material.Filled.CallSplit" Color="Color.Info" Size="Size.Small" />
-                    <MudText Typo="Typo.body2">@repositoryInfo.ForksCount</MudText>
-                </MudStack>
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                    <MudIcon Icon="@Icons.Material.Filled.BugReport" Color="Color.Error" Size="Size.Small" />
-                    <MudText Typo="Typo.body2">@repositoryInfo.OpenIssuesCount Open Issues</MudText>
-                </MudStack>
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-star text-warning me-1"></i>
+                    <small class="text-light">@repositoryInfo.StargazersCount</small>
+                </div>
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-diagram-3 text-info me-1"></i>
+                    <small class="text-light">@repositoryInfo.ForksCount</small>
+                </div>
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-bug text-danger me-1"></i>
+                    <small class="text-light">@repositoryInfo.OpenIssuesCount Open Issues</small>
+                </div>
                 @if (!string.IsNullOrEmpty(repositoryInfo.Language))
                 {
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                        <MudIcon Icon="@Icons.Material.Filled.Code" Color="Color.Secondary" Size="Size.Small" />
-                        <MudText Typo="Typo.body2">@repositoryInfo.Language</MudText>
-                    </MudStack>
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-code text-secondary me-1"></i>
+                        <small class="text-light">@repositoryInfo.Language</small>
+                    </div>
                 }
                 @if (RepositoryService.IsWatched(repositoryInfo.Id))
                 {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.Visibility" Text="Watching" />
+                    <span class="badge bg-success">
+                        <i class="bi bi-eye me-1"></i>Watching
+                    </span>
                 }
             }
-        </MudStack>
-    </MudStack>
-    <MudStack Row="true" Spacing="2" Class="mt-2">
-        <MudButton Variant="Variant.Outlined" 
-                   Color="Color.Primary" 
-                   StartIcon="@Icons.Material.Filled.OpenInNew"
-                   Href="@($"https://github.com/{Owner}/{Repo}")"
-                   Target="_blank">
-            View on GitHub
-        </MudButton>
-        <MudButton Variant="Variant.Filled" 
-                   Color="Color.Primary" 
-                   StartIcon="@Icons.Material.Filled.Add"
-                   OnClick="OpenCreateIssueModal">
-            New Issue
-        </MudButton>
-    </MudStack>
-</MudPaper>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="d-flex gap-2 mt-3">
+            <a href="@($"https://github.com/{Owner}/{Repo}")" 
+               target="_blank" 
+               class="btn btn-outline-primary">
+                <i class="bi bi-box-arrow-up-right me-1"></i>
+                View on GitHub
+            </a>
+            <button type="button" 
+                    class="btn btn-primary"
+                    @onclick="OpenCreateIssueModal">
+                <i class="bi bi-plus me-1"></i>
+                New Issue
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- Advanced Filter Panel -->
 <IssueFilterPanel Owner="@Owner" 
@@ -94,469 +104,508 @@
 <!-- Issues Content -->
 @if (isLoading)
 {
-    <MudPaper Elevation="1" Class="pa-8">
-        <MudStack AlignItems="AlignItems.Center" Spacing="3">
-            <MudProgressCircular Size="Size.Large" Indeterminate="true" Color="Color.Primary" />
-            <MudText Typo="Typo.h6">Loading issues...</MudText>
-        </MudStack>
-    </MudPaper>
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h6>Loading issues...</h6>
+        </div>
+    </div>
 }
 else if (filteredIssues.Any())
 {
-    <MudStack Spacing="2">
+    <div class="d-flex flex-column gap-3">
         @foreach (var issue in filteredIssues)
         {
             var isCopilotAssigning = copilotAssigning.ContainsKey(issue.Number) && copilotAssigning[issue.Number];
             var isSelected = selectedIssues.Any(s => s.Number == issue.Number);
             
-            <MudPaper Elevation="1" Class="pa-4" Style="@(isSelected ? "border-left: 4px solid var(--mud-palette-primary);" : "")">
-                <MudStack Spacing="2">
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <div class="card" style="@(isSelected ? "border-left: 4px solid var(--bs-primary);" : "")">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="d-flex align-items-start flex-grow-1">
                             <!-- Selection Checkbox -->
-                            <MudCheckBox @bind-Value="@isSelected"
-                                         Color="Color.Primary"
-                                         OnValueChanged="@((bool selected) => ToggleIssueSelection(issue, selected))" />
+                            <div class="form-check me-3 mt-1">
+                                <input class="form-check-input" type="checkbox" 
+                                       checked="@isSelected"
+                                       @onchange="@((ChangeEventArgs e) => ToggleIssueSelection(issue, (bool)e.Value!))" />
+                            </div>
                             
-                            <MudStack Spacing="1" Style="flex-grow: 1;">
-                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                    <MudText Typo="Typo.h6">
-                                        <MudLink Href="@issue.HtmlUrl" Target="_blank" Color="Color.Primary">
+                            <div class="flex-grow-1">
+                                <!-- Issue Title and State -->
+                                <div class="d-flex align-items-center mb-2">
+                                    <h6 class="mb-0 me-2">
+                                        <a href="@issue.HtmlUrl" target="_blank" class="text-decoration-none">
                                             #@issue.Number @issue.Title
-                                        </MudLink>
-                                    </MudText>
-                                    <MudChip Size="Size.Small" 
-                                             Color="@(issue.State.ToLower() == "open" ? Color.Success : Color.Default)"
-                                             T="string"
-                                             Text="@issue.State" />
-                                </MudStack>
+                                        </a>
+                                    </h6>
+                                    <span class="badge @(issue.State.ToLower() == "open" ? "bg-success" : "bg-secondary")">
+                                        @issue.State
+                                    </span>
+                                </div>
                                 
-                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                        <MudAvatar Size="Size.Small" Src="@issue.User.AvatarUrl" />
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary">@issue.User.Login</MudText>
-                                    </MudStack>
-                                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                <!-- Issue Meta -->
+                                <div class="d-flex align-items-center gap-3 mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <img src="@issue.User.AvatarUrl" alt="@issue.User.Login" 
+                                             class="rounded-circle me-1" width="20" height="20" />
+                                        <small class="text-muted">@issue.User.Login</small>
+                                    </div>
+                                    <small class="text-muted">
                                         opened @issue.CreatedAt.ToString("MMM dd, yyyy")
-                                    </MudText>
+                                    </small>
                                     @if (issue.CommentCount > 0)
                                     {
-                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                            <MudIcon Icon="@Icons.Material.Filled.Comment" Size="Size.Small" Color="Color.Secondary" />
-                                            <MudText Typo="Typo.body2" Color="Color.Secondary">@issue.CommentCount</MudText>
-                                        </MudStack>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-chat text-muted me-1"></i>
+                                            <small class="text-muted">@issue.CommentCount</small>
+                                        </div>
                                     }
-                                </MudStack>
-                            </MudStack>
-                        </MudStack>
+                                </div>
+                            </div>
+                        </div>
                         
-                        <MudStack Row="true" Spacing="1">
-                            <MudButton Size="Size.Small" 
-                                       Variant="Variant.Outlined" 
-                                       Color="Color.Secondary" 
-                                       StartIcon="@Icons.Material.Filled.Edit"
-                                       OnClick="() => ShowEditModal(issue)">
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-1">
+                            <button type="button" 
+                                    class="btn btn-outline-secondary btn-sm"
+                                    @onclick="() => ShowEditModal(issue)">
+                                <i class="bi bi-pencil me-1"></i>
                                 Edit
-                            </MudButton>
-                            <MudButton Size="Size.Small" 
-                                       Variant="Variant.Outlined" 
-                                       Color="Color.Primary" 
-                                       StartIcon="@Icons.Material.Filled.PersonAdd"
-                                       OnClick="() => ShowAssignModal(issue)">
+                            </button>
+                            <button type="button" 
+                                    class="btn btn-outline-primary btn-sm"
+                                    @onclick="() => ShowAssignModal(issue)">
+                                <i class="bi bi-person-plus me-1"></i>
                                 Assign
-                            </MudButton>
-                            <MudButton Size="Size.Small"
-                                       Variant="Variant.Outlined"
-                                       Color="Color.Info"
-                                       StartIcon="@Icons.Material.Filled.SmartToy"
-                                       Disabled="@isCopilotAssigning"
-                                       OnClick="() => AssignIssueToCopilotAsync(issue)">
+                            </button>
+                            <button type="button"
+                                    class="btn btn-outline-info btn-sm"
+                                    disabled="@isCopilotAssigning"
+                                    @onclick="() => AssignIssueToCopilotAsync(issue)">
                                 @if (isCopilotAssigning)
                                 {
-                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 0.5rem;" />
+                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-robot me-1"></i>
                                 }
                                 Copilot
-                            </MudButton>
-                            <MudButton Size="Size.Small"
-                                       Variant="Variant.Outlined"
-                                       Color="Color.Error"
-                                       StartIcon="@Icons.Material.Filled.Delete"
-                                       OnClick="() => ShowDeleteModal(issue)">
+                            </button>
+                            <button type="button"
+                                    class="btn btn-outline-danger btn-sm"
+                                    @onclick="() => ShowDeleteModal(issue)">
+                                <i class="bi bi-trash me-1"></i>
                                 Delete
-                            </MudButton>
-                        </MudStack>
-                    </MudStack>
+                            </button>
+                        </div>
+                    </div>
                     
+                    <!-- Issue Body -->
                     @if (!string.IsNullOrEmpty(issue.Body))
                     {
-                        <MudText Typo="Typo.body2" Color="Color.Default" Class="mt-2">
-                            @(issue.Body.Length > 200 ? issue.Body.Substring(0, 200) + "..." : issue.Body)
-                        </MudText>
+                        <div class="mt-2">
+                            <p class="mb-0 text-muted">
+                                @(issue.Body.Length > 200 ? issue.Body.Substring(0, 200) + "..." : issue.Body)
+                            </p>
+                        </div>
                     }
                     
+                    <!-- Labels -->
                     @if (issue.Labels.Any())
                     {
-                        <MudStack Row="true" Spacing="1" Class="mt-2" Wrap="Wrap.Wrap">
+                        <div class="d-flex flex-wrap gap-1 mt-2">
                             @foreach (var label in issue.Labels)
                             {
-                                <MudChip T="string" Size="Size.Small" 
-                                         Style="@($"background-color: #{label.Color}; color: {GetContrastColor(label.Color)}")"
-                                         Text="@label.Name" />
+                                <span class="badge" 
+                                      style="background-color: #@label.Color; color: @GetContrastColor(label.Color)">
+                                    @label.Name
+                                </span>
                             }
-                        </MudStack>
+                        </div>
                     }
                     
+                    <!-- Assignees and Milestone -->
                     @if (issue.Assignees.Any() || issue.Milestone != null)
                     {
-                        <MudStack Row="true" Spacing="3" Class="mt-2" AlignItems="AlignItems.Center">
+                        <div class="d-flex gap-3 mt-2 align-items-center">
                             @if (issue.Assignees.Any())
                             {
-                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                    <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Color="Color.Secondary" />
-                                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-person text-muted me-1"></i>
+                                    <small class="text-muted">
                                         Assigned to @string.Join(", ", issue.Assignees.Select(a => a.Login))
-                                    </MudText>
-                                </MudStack>
+                                    </small>
+                                </div>
                             }
                             @if (issue.Milestone != null)
                             {
-                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                    <MudIcon Icon="@Icons.Material.Filled.Flag" Size="Size.Small" Color="Color.Secondary" />
-                                    <MudText Typo="Typo.body2" Color="Color.Secondary">@issue.Milestone.Title</MudText>
-                                </MudStack>
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-flag text-muted me-1"></i>
+                                    <small class="text-muted">@issue.Milestone.Title</small>
+                                </div>
                             }
-                        </MudStack>
+                        </div>
                     }
-                </MudStack>
-            </MudPaper>
+                </div>
+            </div>
         }
-    </MudStack>
+    </div>
 }
 else if (!string.IsNullOrEmpty(errorMessage))
 {
-    <MudAlert Severity="@GetErrorSeverity(errorMessage)" Class="mb-4">
-        <MudText Typo="Typo.h6" Class="mb-2">Unable to Load Issues</MudText>
-        <MudText Class="mb-2">@errorMessage</MudText>
+    <div class="alert @GetErrorAlertClass(errorMessage)" role="alert">
+        <h6 class="alert-heading">Unable to Load Issues</h6>
+        <p class="mb-2">@errorMessage</p>
         
         @if (errorMessage.Contains("authentication") || errorMessage.Contains("token"))
         {
-            <MudStack Row="true" Spacing="2" Class="mt-3">
-                <MudButton Variant="Variant.Filled" 
-                           Color="Color.Primary" 
-                           Href="/settings" 
-                           StartIcon="@Icons.Material.Filled.Settings">
+            <div class="d-flex gap-2 mt-3">
+                <a href="/settings" class="btn btn-primary">
+                    <i class="bi bi-gear me-1"></i>
                     Configure Token
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" 
-                           Color="Color.Info" 
-                           Href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"
-                           Target="_blank"
-                           StartIcon="@Icons.Material.Filled.Help">
+                </a>
+                <a href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"
+                   target="_blank"
+                   class="btn btn-outline-info">
+                    <i class="bi bi-question-circle me-1"></i>
                     Token Help
-                </MudButton>
-            </MudStack>
+                </a>
+            </div>
         }
         else if (errorMessage.Contains("network") || errorMessage.Contains("connectivity") || errorMessage.Contains("DNS"))
         {
-            <MudStack Spacing="2" Class="mt-3">
-                <MudText Typo="Typo.body2" Color="Color.Info">
-                    <strong>Troubleshooting steps:</strong>
-                </MudText>
-                <MudText Typo="Typo.body2">• Check your internet connection</MudText>
-                <MudText Typo="Typo.body2">• Verify that api.github.com is accessible from your network</MudText>
-                <MudText Typo="Typo.body2">• If behind a corporate firewall, contact your IT administrator</MudText>
-                <MudText Typo="Typo.body2">• Try again later as GitHub services may be temporarily unavailable</MudText>
-                <MudButton Variant="Variant.Outlined" 
-                           Color="Color.Primary" 
-                           OnClick="LoadData"
-                           StartIcon="@Icons.Material.Filled.Refresh"
-                           Class="mt-2">
+            <div class="mt-3">
+                <p class="mb-2"><strong>Troubleshooting steps:</strong></p>
+                <ul class="mb-3">
+                    <li>Check your internet connection</li>
+                    <li>Verify that api.github.com is accessible from your network</li>
+                    <li>If behind a corporate firewall, contact your IT administrator</li>
+                    <li>Try again later as GitHub services may be temporarily unavailable</li>
+                </ul>
+                <button type="button" 
+                        class="btn btn-outline-primary"
+                        @onclick="LoadData">
+                    <i class="bi bi-arrow-clockwise me-1"></i>
                     Try Again
-                </MudButton>
-            </MudStack>
+                </button>
+            </div>
         }
         else if (errorMessage.Contains("not found") || errorMessage.Contains("Repository"))
         {
-            <MudStack Row="true" Spacing="2" Class="mt-3">
-                <MudButton Variant="Variant.Outlined" 
-                           Color="Color.Primary" 
-                           Href="/repositories" 
-                           StartIcon="@Icons.Material.Filled.Search">
+            <div class="d-flex gap-2 mt-3">
+                <a href="/repositories" class="btn btn-outline-primary">
+                    <i class="bi bi-search me-1"></i>
                     Browse Repositories
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" 
-                           Color="Color.Info" 
-                           OnClick="LoadData"
-                           StartIcon="@Icons.Material.Filled.Refresh">
+                </a>
+                <button type="button" 
+                        class="btn btn-outline-info"
+                        @onclick="LoadData">
+                    <i class="bi bi-arrow-clockwise me-1"></i>
                     Retry
-                </MudButton>
-            </MudStack>
+                </button>
+            </div>
         }
         else
         {
-            <MudButton Variant="Variant.Outlined" 
-                       Color="Color.Primary" 
-                       OnClick="LoadData"
-                       StartIcon="@Icons.Material.Filled.Refresh"
-                       Class="mt-2">
+            <button type="button" 
+                    class="btn btn-outline-primary mt-2"
+                    @onclick="LoadData">
+                <i class="bi bi-arrow-clockwise me-1"></i>
                 Try Again
-            </MudButton>
+            </button>
         }
-    </MudAlert>
+    </div>
 }
 else
 {
-    <MudPaper Elevation="1" Class="pa-6">
-        <MudStack AlignItems="AlignItems.Center" Spacing="3">
-            <MudIcon Icon="@Icons.Material.Filled.BugReport" Size="Size.Large" Color="Color.Secondary" />
-            <MudText Typo="Typo.h6">No Issues Found</MudText>
-            <MudText Typo="Typo.body1" Color="Color.Secondary" Align="Align.Center">
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-bug text-muted" style="font-size: 3rem;"></i>
+            <h6 class="mt-3">No Issues Found</h6>
+            <p class="text-muted">
                 This repository doesn't have any issues yet.
-            </MudText>
+            </p>
             @if (AuthService.IsAuthenticated)
             {
-                <MudButton Variant="Variant.Filled" 
-                           Color="Color.Primary" 
-                           StartIcon="@Icons.Material.Filled.Add"
-                           OnClick="OpenCreateIssueModal">
+                <button type="button" 
+                        class="btn btn-primary"
+                        @onclick="OpenCreateIssueModal">
+                    <i class="bi bi-plus me-1"></i>
                     Create First Issue
-                </MudButton>
+                </button>
             }
-        </MudStack>
-    </MudPaper>
+        </div>
+    </div>
 }
 
 <!-- Simple Create Issue Modal -->
-<MudDialog IsVisible="showCreateIssueModal" Options="@(new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true })">
-    <TitleContent>
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-            <MudIcon Icon="@Icons.Material.Filled.Add" Color="Color.Primary" />
-            <MudText Typo="Typo.h6">Create New Issue</MudText>
-        </MudStack>
-    </TitleContent>
-    <DialogContent>
-        <MudStack Spacing="3">
-            <MudTextField @bind-Value="newIssueTitle" 
-                          Label="Issue Title" 
-                          Placeholder="Enter a descriptive title for the issue..."
-                          Variant="Variant.Outlined"
-                          FullWidth="true"
-                          Required="true"
-                          Immediate="true"
-                          HelperText="A clear, concise title that describes the issue" />
-            
-            <MudTextField @bind-Value="newIssueBody" 
-                          Label="Issue Description" 
-                          Placeholder="Provide a detailed description of the issue..."
-                          Lines="8"
-                          Variant="Variant.Outlined"
-                          FullWidth="true"
-                          Immediate="true"
-                          HelperText="Detailed description of the issue (supports Markdown formatting)" />
-            
-            @if (!string.IsNullOrEmpty(createIssueError))
-            {
-                <MudAlert Severity="Severity.Error" Dense="true">
-                    <MudText Typo="Typo.body2">@createIssueError</MudText>
-                </MudAlert>
-            }
-        </MudStack>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="CloseCreateIssueModal" 
-                   Variant="Variant.Text"
-                   Color="Color.Default">
-            Cancel
-        </MudButton>
-        <MudButton OnClick="CreateIssue" 
-                   Variant="Variant.Filled" 
-                   Color="Color.Primary" 
-                   Disabled="@(string.IsNullOrWhiteSpace(newIssueTitle) || isCreatingIssue)"
-                   StartIcon="@Icons.Material.Filled.Add">
-            @if (isCreatingIssue)
-            {
-                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
-            }
-            Create Issue
-        </MudButton>
-    </DialogActions>
-</MudDialog>
+@if (showCreateIssueModal)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-plus text-primary me-2"></i>
+                        Create New Issue
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseCreateIssueModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Issue Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" 
+                               @bind="newIssueTitle" 
+                               placeholder="Enter a descriptive title for the issue..." />
+                        <div class="form-text">A clear, concise title that describes the issue</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Issue Description</label>
+                        <textarea class="form-control" rows="8" 
+                                  @bind="newIssueBody" 
+                                  placeholder="Provide a detailed description of the issue..."></textarea>
+                        <div class="form-text">Detailed description of the issue (supports Markdown formatting)</div>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(createIssueError))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @createIssueError
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseCreateIssueModal">
+                        Cancel
+                    </button>
+                    <button type="button" 
+                            class="btn btn-primary"
+                            disabled="@(string.IsNullOrWhiteSpace(newIssueTitle) || isCreatingIssue)"
+                            @onclick="CreateIssue">
+                        @if (isCreatingIssue)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-plus me-1"></i>
+                        }
+                        Create Issue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 <!-- Assign Issue Modal -->
-<MudDialog @bind-Visible="ShowAssignIssueModal" Options="@(new DialogOptions { MaxWidth = MaxWidth.Medium })">
-    <DialogContent>
-        <MudStack Spacing="3">
-            <MudText Typo="Typo.h6">Assign Issue #@selectedIssue?.Number</MudText>
-            
-            @if (agentAssignmentWarning != null)
-            {
-                <MudAlert Severity="Severity.Warning" Dense="true">
-                    <MudText Typo="Typo.body2">@agentAssignmentWarning</MudText>
-                </MudAlert>
-            }
-            
-            <MudText Typo="Typo.subtitle1">Available Assignees</MudText>
-            
-            @if (isLoadingAssignees)
-            {
-                <MudStack AlignItems="AlignItems.Center" Class="py-4">
-                    <MudProgressCircular Size="Size.Medium" Indeterminate="true" />
-                    <MudText Typo="Typo.body2">Loading assignees...</MudText>
-                </MudStack>
-            }
-            else if (availableAssignees.Any())
-            {
-                <MudStack Spacing="2">
-                    @foreach (var assignee in availableAssignees)
+@if (ShowAssignIssueModal)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Assign Issue #@selectedIssue?.Number</h5>
+                    <button type="button" class="btn-close" @onclick="CloseAssignModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (agentAssignmentWarning != null)
                     {
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                            <MudCheckBox @bind-Value="@selectedAssignees[assignee.Login]" 
-                                         Color="Color.Primary" />
-                            <MudAvatar Size="Size.Small" Src="@assignee.AvatarUrl" />
-                            <MudText Typo="Typo.body1">@assignee.Login</MudText>
-                        </MudStack>
+                        <div class="alert alert-warning" role="alert">
+                            @agentAssignmentWarning
+                        </div>
                     }
-                </MudStack>
-            }
-            else
-            {
-                <MudAlert Severity="Severity.Info" Dense="true">
-                    <MudText Typo="Typo.body2">No assignees available for this repository.</MudText>
-                </MudAlert>
-            }
-            
-            @if (selectedIssue?.Assignees.Any() == true)
-            {
-                <MudDivider />
-                <MudText Typo="Typo.subtitle2">Currently Assigned</MudText>
-                <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
-                    @foreach (var assignee in selectedIssue.Assignees)
+                    
+                    <h6>Available Assignees</h6>
+                    
+                    @if (isLoadingAssignees)
                     {
-                        <MudChip T="string" Size="Size.Small" Color="Color.Primary">
-                            <MudAvatar Size="Size.Small" Src="@assignee.AvatarUrl" Style="margin-right: 0.25rem;" />
-                            @assignee.Login
-                        </MudChip>
+                        <div class="text-center py-4">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading assignees...</p>
+                        </div>
                     }
-                </MudStack>
-            }
-        </MudStack>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="CloseAssignModal" Variant="Variant.Text">
-            Cancel
-        </MudButton>
-        <MudButton OnClick="AssignIssue" 
-                   Variant="Variant.Filled" 
-                   Color="Color.Primary" 
-                   Disabled="@isAssigningIssue">
-            @if (isAssigningIssue)
-            {
-                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 0.5rem;" />
-            }
-            Update Assignment
-        </MudButton>
-    </DialogActions>
-</MudDialog>
+                    else if (availableAssignees.Any())
+                    {
+                        <div class="d-flex flex-column gap-2">
+                            @foreach (var assignee in availableAssignees)
+                            {
+                                <div class="d-flex align-items-center">
+                                    <div class="form-check me-2">
+                                        <input class="form-check-input" type="checkbox" 
+                                               checked="@selectedAssignees[assignee.Login]"
+                                               @onchange="@((ChangeEventArgs e) => selectedAssignees[assignee.Login] = (bool)e.Value!)" />
+                                    </div>
+                                    <img src="@assignee.AvatarUrl" alt="@assignee.Login" 
+                                         class="rounded-circle me-2" width="24" height="24" />
+                                    <span>@assignee.Login</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info" role="alert">
+                            No assignees available for this repository.
+                        </div>
+                    }
+                    
+                    @if (selectedIssue?.Assignees.Any() == true)
+                    {
+                        <hr>
+                        <h6>Currently Assigned</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var assignee in selectedIssue.Assignees)
+                            {
+                                <span class="badge bg-primary d-flex align-items-center">
+                                    <img src="@assignee.AvatarUrl" alt="@assignee.Login" 
+                                         class="rounded-circle me-1" width="16" height="16" />
+                                    @assignee.Login
+                                </span>
+                            }
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseAssignModal">
+                        Cancel
+                    </button>
+                    <button type="button" 
+                            class="btn btn-primary"
+                            disabled="@isAssigningIssue"
+                            @onclick="AssignIssue">
+                        @if (isAssigningIssue)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        }
+                        Update Assignment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 <!-- Edit Issue Modal -->
-<MudDialog @bind-Visible="ShowEditIssueModal" Options="@(new DialogOptions { MaxWidth = MaxWidth.Large })">
-    <DialogContent>
-        <MudStack Spacing="3">
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                <MudIcon Icon="@Icons.Material.Filled.Edit" Color="Color.Secondary" />
-                <MudText Typo="Typo.h6">Edit Issue #@selectedIssue?.Number</MudText>
-            </MudStack>
-            
-            <!-- Issue Title -->
-            <MudTextField @bind-Value="editIssueTitle" 
-                          Label="Issue Title" 
-                          Placeholder="Enter issue title..."
-                          Variant="Variant.Outlined"
-                          FullWidth="true"
-                          Required="true"
-                          HelperText="Brief title that describes the issue" />
-            
-            <!-- Issue Description -->
-            <MudTextField @bind-Value="editIssueBody" 
-                          Label="Issue Description" 
-                          Placeholder="Provide a detailed description of the issue..."
-                          Lines="8"
-                          Variant="Variant.Outlined"
-                          FullWidth="true"
-                          HelperText="Detailed description of the issue (supports Markdown)" />
-            
-            @if (!string.IsNullOrEmpty(editErrorMessage))
-            {
-                <MudAlert Severity="Severity.Error" Dense="true">
-                    <MudText Typo="Typo.body2">@editErrorMessage</MudText>
-                </MudAlert>
-            }
-        </MudStack>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="CloseEditModal" 
-                   Variant="Variant.Text">
-            Cancel
-        </MudButton>
-        <MudButton OnClick="SaveEditedIssue" 
-                   Variant="Variant.Filled" 
-                   Color="Color.Secondary" 
-                   Disabled="@(string.IsNullOrWhiteSpace(editIssueTitle) || isEditingIssue)">
-            @if (isEditingIssue)
-            {
-                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
-            }
-            Save Changes
-        </MudButton>
-    </DialogActions>
-</MudDialog>
+@if (ShowEditIssueModal)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil text-secondary me-2"></i>
+                        Edit Issue #@selectedIssue?.Number
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseEditModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Issue Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" 
+                               @bind="editIssueTitle" 
+                               placeholder="Enter issue title..." />
+                        <div class="form-text">Brief title that describes the issue</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Issue Description</label>
+                        <textarea class="form-control" rows="8" 
+                                  @bind="editIssueBody" 
+                                  placeholder="Provide a detailed description of the issue..."></textarea>
+                        <div class="form-text">Detailed description of the issue (supports Markdown)</div>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(editErrorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @editErrorMessage
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseEditModal">
+                        Cancel
+                    </button>
+                    <button type="button" 
+                            class="btn btn-primary"
+                            disabled="@(string.IsNullOrWhiteSpace(editIssueTitle) || isEditingIssue)"
+                            @onclick="SaveEditedIssue">
+                        @if (isEditingIssue)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        }
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 <!-- Delete Issue Confirmation Modal -->
-<MudDialog @bind-Visible="ShowDeleteIssueModal" Options="@(new DialogOptions { MaxWidth = MaxWidth.Medium })">
-    <DialogContent>
-        <MudText Typo="Typo.h6" Color="Color.Error" Class="mb-3">
-            <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Class="mr-2" />
-            Confirm Issue Deletion
-        </MudText>
-        
-        @if (selectedIssue != null)
-        {
-            <MudText Typo="Typo.body1" Class="mb-3">
-                Are you sure you want to delete the following issue? This action will close the issue and cannot be undone.
-            </MudText>
-            
-            <MudPaper Elevation="1" Class="pa-3 mb-3" Style="background-color: var(--mud-palette-error-lighten);">
-                <MudText Typo="Typo.subtitle1" Style="font-weight: bold;">
-                    #@selectedIssue.Number @selectedIssue.Title
-                </MudText>
-                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
-                    Created by @selectedIssue.User.Login on @selectedIssue.CreatedAt.ToString("MMM dd, yyyy")
-                </MudText>
-            </MudPaper>
-            
-            <MudText Typo="Typo.body2" Color="Color.Secondary">
-                <strong>Note:</strong> GitHub doesn't support permanent issue deletion. This will close the issue instead.
-            </MudText>
-        }
-    </DialogContent>
-    
-    <DialogActions>
-        <MudButton OnClick="CloseDeleteModal" 
-                   Variant="Variant.Text">
-            Cancel
-        </MudButton>
-        <MudButton OnClick="ConfirmDeleteIssue" 
-                   Variant="Variant.Filled" 
-                   Color="Color.Error" 
-                   Disabled="@isDeletingIssue">
-            @if (isDeletingIssue)
-            {
-                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
-            }
-            Delete Issue
-        </MudButton>
-    </DialogActions>
-</MudDialog>
+@if (ShowDeleteIssueModal)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger">
+                        <i class="bi bi-exclamation-triangle text-danger me-2"></i>
+                        Confirm Issue Deletion
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseDeleteModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (selectedIssue != null)
+                    {
+                        <p class="mb-3">
+                            Are you sure you want to delete the following issue? This action will close the issue and cannot be undone.
+                        </p>
+                        
+                        <div class="alert alert-danger">
+                            <h6 class="fw-bold">
+                                #@selectedIssue.Number @selectedIssue.Title
+                            </h6>
+                            <small class="text-muted">
+                                Created by @selectedIssue.User.Login on @selectedIssue.CreatedAt.ToString("MMM dd, yyyy")
+                            </small>
+                        </div>
+                        
+                        <p class="text-muted">
+                            <strong>Note:</strong> GitHub doesn't support permanent issue deletion. This will close the issue instead.
+                        </p>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseDeleteModal">
+                        Cancel
+                    </button>
+                    <button type="button" 
+                            class="btn btn-danger"
+                            disabled="@isDeletingIssue"
+                            @onclick="ConfirmDeleteIssue">
+                        @if (isDeletingIssue)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-trash me-1"></i>
+                        }
+                        Delete Issue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     [Parameter] public string Owner { get; set; } = string.Empty;
@@ -1010,46 +1059,24 @@ else
         StateHasChanged();
     }
 
-    private enum ErrorType
+    private static string GetErrorAlertClass(string errorMessage)
     {
-        AuthenticationError,
-        NotFoundError,
-        NetworkError,
-        GeneralError
-    }
-
-    private static readonly Dictionary<ErrorType, Severity> ErrorSeverityMap = new()
-    {
-        { ErrorType.AuthenticationError, Severity.Warning },
-        { ErrorType.NotFoundError, Severity.Info },
-        { ErrorType.NetworkError, Severity.Error },
-        { ErrorType.GeneralError, Severity.Warning }
-    };
-
-    private static ErrorType CategorizeError(string errorMessage)
-    {
-        if (errorMessage.Contains("authentication") || errorMessage.Contains("token") || errorMessage.Contains("Unauthorized"))
+        if (errorMessage.Contains("authentication") || errorMessage.Contains("token"))
         {
-            return ErrorType.AuthenticationError;
+            return "alert-warning";
         }
         else if (errorMessage.Contains("not found") || errorMessage.Contains("Repository"))
         {
-            return ErrorType.NotFoundError;
+            return "alert-info";
         }
         else if (errorMessage.Contains("network") || errorMessage.Contains("connectivity") || errorMessage.Contains("DNS"))
         {
-            return ErrorType.NetworkError;
+            return "alert-danger";
         }
         else
         {
-            return ErrorType.GeneralError;
+            return "alert-warning";
         }
-    }
-
-    private static Severity GetErrorSeverity(string errorMessage)
-    {
-        var errorType = CategorizeError(errorMessage);
-        return ErrorSeverityMap[errorType];
     }
 
     private async Task AssignIssueToCopilotAsync(GitHubIssue issue)
