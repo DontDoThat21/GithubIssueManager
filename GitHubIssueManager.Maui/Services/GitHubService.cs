@@ -479,50 +479,6 @@ public class GitHubService
         }
     }
 
-    public async Task<IEnumerable<GitHubLabel>> GetLabelsAsync(string owner, string repo)
-    {
-        try
-        {
-            var labels = await _client.Issue.Labels.GetAllForRepository(owner, repo);
-            return labels.Select(l => new GitHubLabel
-            {
-                Id = l.Id,
-                Name = l.Name,
-                Color = l.Color,
-                Description = l.Description ?? string.Empty
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching labels for {Owner}/{Repo}", owner, repo);
-            throw;
-        }
-    }
-
-    public async Task<IEnumerable<GitHubMilestone>> GetMilestonesAsync(string owner, string repo)
-    {
-        try
-        {
-            var milestones = await _client.Issue.Milestone.GetAllForRepository(owner, repo);
-            return milestones.Select(m => new GitHubMilestone
-            {
-                Id = m.Id,
-                Title = m.Title,
-                Description = m.Description ?? string.Empty,
-                Number = m.Number,
-                State = m.State.ToString(),
-                DueOn = m.DueOn?.DateTime,
-                CreatedAt = m.CreatedAt.DateTime,
-                UpdatedAt = m.UpdatedAt?.DateTime ?? m.CreatedAt.DateTime
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching milestones for {Owner}/{Repo}", owner, repo);
-            throw;
-        }
-    }
-
     public async Task<IEnumerable<GitHubUser>> GetContributorsAsync(string owner, string repo)
     {
         try
