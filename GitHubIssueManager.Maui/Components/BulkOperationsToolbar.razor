@@ -2,6 +2,7 @@
 @using GitHubIssueManager.Maui.Services
 @using MudBlazor
 @inject GitHubService GitHubService
+@inject ILogger<BulkOperationsToolbar> Logger
 @rendermode InteractiveServer
 
 @if (SelectedIssues.Any())
@@ -16,45 +17,47 @@
             </MudStack>
             
             <MudStack Row="true" Spacing="1">
-                <MudButton Size="Size.Small"
-                           Variant="Variant.Text"
-                           Color="Color.Secondary"
-                           StartIcon="@Icons.Material.Filled.PersonAdd"
-                           OnClick="ShowBulkAssignDialog">
+                <button type="button"
+                        class="btn btn-link btn-sm text-secondary"
+                        @onclick="ShowBulkAssignDialog">
+                    <i class="bi bi-person-plus me-1"></i>
                     Assign
-                </MudButton>
+                </button>
                 
-                <MudButton Size="Size.Small"
-                           Variant="Variant.Text"
-                           Color="Color.Warning"
-                           StartIcon="@Icons.Material.Filled.Label"
-                           OnClick="ShowBulkLabelDialog">
+                <button type="button"
+                        class="btn btn-link btn-sm text-warning"
+                        @onclick="ShowBulkLabelDialog">
+                    <i class="bi bi-tag me-1"></i>
                     Label
-                </MudButton>
+                </button>
                 
-                <MudButton Size="Size.Small"
-                           Variant="Variant.Text"
-                           Color="Color.Error"
-                           StartIcon="@Icons.Material.Filled.Close"
-                           OnClick="ShowBulkCloseDialog">
+                <button type="button"
+                        class="btn btn-link btn-sm text-danger"
+                        @onclick="ShowBulkCloseDialog">
+                    <i class="bi bi-x-circle me-1"></i>
                     Close
-                </MudButton>
+                </button>
                 
-                <MudButton Size="Size.Small"
-                           Variant="Variant.Text"
-                           Color="Color.Success"
-                           StartIcon="@Icons.Material.Filled.Download"
-                           OnClick="ShowExportDialogModal">
+                <button type="button"
+                        class="btn btn-link btn-sm text-danger"
+                        @onclick="ShowBulkDeleteDialog">
+                    <i class="bi bi-trash me-1"></i>
+                    Delete
+                </button>
+                
+                <button type="button"
+                        class="btn btn-link btn-sm text-success"
+                        @onclick="ShowExportDialogModal">
+                    <i class="bi bi-download me-1"></i>
                     Export
-                </MudButton>
+                </button>
                 
-                <MudButton Size="Size.Small"
-                           Variant="Variant.Text"
-                           Color="Color.Secondary"
-                           StartIcon="@Icons.Material.Filled.Clear"
-                           OnClick="ClearSelection">
+                <button type="button"
+                        class="btn btn-link btn-sm text-secondary"
+                        @onclick="ClearSelection">
+                    <i class="bi bi-x-circle me-1"></i>
                     Clear
-                </MudButton>
+                </button>
             </MudStack>
         </MudStack>
     </MudPaper>
@@ -99,17 +102,21 @@
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="() => ShowAssignDialog = false">Cancel</MudButton>
-        <MudButton Color="Color.Primary" 
-                   Variant="Variant.Filled"
-                   OnClick="BulkAssignIssues"
-                   Disabled="@(isBulkProcessing || !selectedAssignees.Any(kvp => kvp.Value))">
+        <button type="button" 
+                class="btn btn-outline-secondary"
+                @onclick="() => ShowAssignDialog = false">
+            Cancel
+        </button>
+        <button type="button" 
+                class="btn btn-primary"
+                @onclick="BulkAssignIssues"
+                disabled="@(isBulkProcessing || !selectedAssignees.Any(kvp => kvp.Value))">
             @if (isBulkProcessing)
             {
                 <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
             }
             Assign Issues
-        </MudButton>
+        </button>
     </DialogActions>
 </MudDialog>
 
@@ -157,17 +164,21 @@
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="() => ShowLabelDialog = false">Cancel</MudButton>
-        <MudButton Color="Color.Primary" 
-                   Variant="Variant.Filled"
-                   OnClick="BulkLabelIssues"
-                   Disabled="@(isBulkProcessing || !selectedLabels.Any(kvp => kvp.Value))">
+        <button type="button" 
+                class="btn btn-outline-secondary"
+                @onclick="() => ShowLabelDialog = false">
+            Cancel
+        </button>
+        <button type="button" 
+                class="btn btn-primary"
+                @onclick="BulkLabelIssues"
+                disabled="@(isBulkProcessing || !selectedLabels.Any(kvp => kvp.Value))">
             @if (isBulkProcessing)
             {
                 <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
             }
             Add Labels
-        </MudButton>
+        </button>
     </DialogActions>
 </MudDialog>
 
@@ -197,17 +208,68 @@
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="() => ShowCloseDialog = false">Cancel</MudButton>
-        <MudButton Color="Color.Error" 
-                   Variant="Variant.Filled"
-                   OnClick="BulkCloseIssues"
-                   Disabled="@isBulkProcessing">
+        <button type="button" 
+                class="btn btn-outline-secondary"
+                @onclick="() => ShowCloseDialog = false">
+            Cancel
+        </button>
+        <button type="button" 
+                class="btn btn-danger"
+                @onclick="BulkCloseIssues"
+                disabled="@isBulkProcessing">
             @if (isBulkProcessing)
             {
                 <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
             }
             Close Issues
-        </MudButton>
+        </button>
+    </DialogActions>
+</MudDialog>
+
+<!-- Bulk Delete Dialog -->
+<MudDialog @bind-Visible="ShowDeleteDialog">
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h6" Color="Color.Error">
+                <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Class="mr-2" />
+                Bulk Delete Issues
+            </MudText>
+            <MudAlert Severity="Severity.Error" Dense="true">
+                <MudText Typo="Typo.body2">
+                    <strong>Warning:</strong> This will delete @SelectedIssues.Count issue@(SelectedIssues.Count == 1 ? "" : "s"). 
+                    GitHub doesn't support permanent deletion, so this will close the issues instead.
+                </MudText>
+            </MudAlert>
+            
+            <MudText Typo="Typo.body2">Issues to be deleted:</MudText>
+            <MudStack Spacing="1" Class="max-height-300 overflow-y-auto">
+                @foreach (var issue in SelectedIssues.Take(10))
+                {
+                    <MudText Typo="Typo.body2">• #@issue.Number - @issue.Title</MudText>
+                }
+                @if (SelectedIssues.Count > 10)
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">... and @(SelectedIssues.Count - 10) more</MudText>
+                }
+            </MudStack>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <button type="button" 
+                class="btn btn-outline-secondary"
+                @onclick="() => ShowDeleteDialog = false">
+            Cancel
+        </button>
+        <button type="button" 
+                class="btn btn-danger"
+                @onclick="BulkDeleteIssues"
+                disabled="@isBulkProcessing">
+            @if (isBulkProcessing)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
+            }
+            Delete Issues
+        </button>
     </DialogActions>
 </MudDialog>
 
@@ -243,17 +305,21 @@
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="() => ShowExportDialog = false">Cancel</MudButton>
-        <MudButton Color="Color.Success" 
-                   Variant="Variant.Filled"
-                   OnClick="ExportIssues"
-                   Disabled="@(isBulkProcessing || string.IsNullOrWhiteSpace(exportFilename))">
+        <button type="button" 
+                class="btn btn-outline-secondary"
+                @onclick="() => ShowExportDialog = false">
+            Cancel
+        </button>
+        <button type="button" 
+                class="btn btn-success"
+                @onclick="ExportIssues"
+                disabled="@(isBulkProcessing || string.IsNullOrWhiteSpace(exportFilename))">
             @if (isBulkProcessing)
             {
                 <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
             }
             Export
-        </MudButton>
+        </button>
     </DialogActions>
 </MudDialog>
 
@@ -268,6 +334,7 @@
     private bool ShowAssignDialog = false;
     private bool ShowLabelDialog = false;
     private bool ShowCloseDialog = false;
+    private bool ShowDeleteDialog = false;
     private bool ShowExportDialog = false;
 
     // Processing states
@@ -302,6 +369,11 @@
     private void ShowBulkCloseDialog()
     {
         ShowCloseDialog = true;
+    }
+
+    private void ShowBulkDeleteDialog()
+    {
+        ShowDeleteDialog = true;
     }
 
     private void ShowExportDialogModal()
@@ -478,6 +550,30 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error in bulk close: {ex.Message}");
+        }
+        finally
+        {
+            isBulkProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task BulkDeleteIssues()
+    {
+        isBulkProcessing = true;
+        StateHasChanged();
+
+        try
+        {
+            var issueNumbers = SelectedIssues.Select(i => i.Number);
+            var updatedIssues = await GitHubService.BulkDeleteIssuesAsync(Owner, Repo, issueNumbers);
+            
+            await OnIssuesUpdated.InvokeAsync(updatedIssues);
+            ShowDeleteDialog = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in bulk delete: {ex.Message}");
         }
         finally
         {

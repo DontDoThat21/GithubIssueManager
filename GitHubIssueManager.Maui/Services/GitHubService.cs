@@ -479,50 +479,6 @@ public class GitHubService
         }
     }
 
-    public async Task<IEnumerable<GitHubLabel>> GetLabelsAsync(string owner, string repo)
-    {
-        try
-        {
-            var labels = await _client.Issue.Labels.GetAllForRepository(owner, repo);
-            return labels.Select(l => new GitHubLabel
-            {
-                Id = l.Id,
-                Name = l.Name,
-                Color = l.Color,
-                Description = l.Description ?? string.Empty
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching labels for {Owner}/{Repo}", owner, repo);
-            throw;
-        }
-    }
-
-    public async Task<IEnumerable<GitHubMilestone>> GetMilestonesAsync(string owner, string repo)
-    {
-        try
-        {
-            var milestones = await _client.Issue.Milestone.GetAllForRepository(owner, repo);
-            return milestones.Select(m => new GitHubMilestone
-            {
-                Id = m.Id,
-                Title = m.Title,
-                Description = m.Description ?? string.Empty,
-                Number = m.Number,
-                State = m.State.ToString(),
-                DueOn = m.DueOn?.DateTime,
-                CreatedAt = m.CreatedAt.DateTime,
-                UpdatedAt = m.UpdatedAt?.DateTime ?? m.CreatedAt.DateTime
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching milestones for {Owner}/{Repo}", owner, repo);
-            throw;
-        }
-    }
-
     public async Task<IEnumerable<GitHubUser>> GetContributorsAsync(string owner, string repo)
     {
         try
@@ -696,6 +652,55 @@ public class GitHubService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error reopening issue #{IssueNumber} in bulk operation", issueNumber);
+                // Continue with other issues even if one fails
+            }
+        }
+
+        return results;
+    }
+
+    /// <summary>
+    /// Delete (close) a single issue with confirmation
+    /// Note: GitHub API doesn't support true deletion, so this closes the issue
+    /// </summary>
+    public async Task<GitHubIssue> DeleteIssueAsync(string owner, string repo, long issueNumber)
+    {
+        try
+        {
+            ValidateIssueNumber(issueNumber);
+
+            var issueUpdate = new IssueUpdate { State = ItemState.Closed };
+            var issue = await _client.Issue.Update(owner, repo, (int)issueNumber, issueUpdate);
+            return MapToGitHubIssue(issue);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting (closing) issue #{IssueNumber} in {Owner}/{Repo}", issueNumber, owner, repo);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Bulk delete (close) issues with confirmation
+    /// Note: GitHub API doesn't support true deletion, so this closes the issues
+    /// </summary>
+    public async Task<List<GitHubIssue>> BulkDeleteIssuesAsync(string owner, string repo, IEnumerable<long> issueNumbers)
+    {
+        var results = new List<GitHubIssue>();
+
+        foreach (var issueNumber in issueNumbers)
+        {
+            try
+            {
+                ValidateIssueNumber(issueNumber);
+
+                var issueUpdate = new IssueUpdate { State = ItemState.Closed };
+                var issue = await _client.Issue.Update(owner, repo, (int)issueNumber, issueUpdate);
+                results.Add(MapToGitHubIssue(issue));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting (closing) issue #{IssueNumber} in bulk operation", issueNumber);
                 // Continue with other issues even if one fails
             }
         }

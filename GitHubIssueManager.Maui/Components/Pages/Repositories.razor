@@ -53,18 +53,18 @@ else
         </MudItem>
         <MudItem xs="12" md="4">
             <MudStack Row="true" Spacing="2">
-                <MudButton Variant="Variant.Filled" 
-                          Color="Color.Primary" 
-                          StartIcon="@Icons.Material.Filled.Search"
-                          OnClick="SearchRepositories">
+                <button type="button" 
+                        class="btn btn-primary btn-sm"
+                        @onclick="SearchRepositories">
+                    <i class="bi bi-search me-1"></i>
                     Search
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" 
-                          Color="Color.Primary" 
-                          StartIcon="@Icons.Material.Filled.Folder"
-                          OnClick="LoadMyRepositories">
+                </button>
+                <button type="button" 
+                        class="btn btn-outline-primary btn-sm"
+                        @onclick="LoadMyRepositories">
+                    <i class="bi bi-folder me-1"></i>
                     My Repos
-                </MudButton>
+                </button>
             </MudStack>
         </MudItem>
     </MudGrid>
@@ -133,45 +133,38 @@ else
                             <MudStack Row="true" Spacing="1" Style="width: 100%" Wrap="Wrap.Wrap">
                                 @if (RepositoryService.IsWatched(repo.Id))
                                 {
-                                    <MudButton Size="Size.Small" 
-                                              Variant="Variant.Outlined" 
-                                              Color="Color.Error" 
-                                              StartIcon="@Icons.Material.Filled.RemoveCircle"
-                                              OnClick="() => RemoveFromWatchlist(repo)">
+                                    <button type="button" 
+                                            class="btn btn-outline-danger btn-sm"
+                                            @onclick="() => RemoveFromWatchlist(repo)">
+                                        <i class="bi bi-dash-circle me-1"></i>
                                         Remove
-                                    </MudButton>
-                                    <MudButton Size="Size.Small" 
-                                              Variant="Variant.Filled" 
-                                              Color="Color.Primary" 
-                                              StartIcon="@Icons.Material.Filled.BugReport"
-                                              Href="@($"/issues/{repo.Owner.Login}/{repo.Name}")">
+                                    </button>
+                                    <a href="/issues/@repo.Owner.Login/@repo.Name" 
+                                       class="btn btn-primary btn-sm">
+                                        <i class="bi bi-bug me-1"></i>
                                         Issues
-                                    </MudButton>
+                                    </a>
                                 }
                                 else
                                 {
-                                    <MudButton Size="Size.Small" 
-                                              Variant="Variant.Outlined" 
-                                              Color="Color.Primary" 
-                                              StartIcon="@Icons.Material.Filled.Add"
-                                              OnClick="() => AddToWatchlist(repo)">
+                                    <button type="button" 
+                                            class="btn btn-outline-primary btn-sm"
+                                            @onclick="() => AddToWatchlist(repo)">
+                                        <i class="bi bi-plus me-1"></i>
                                         Watch
-                                    </MudButton>
+                                    </button>
                                 }
-                                <MudButton Size="Size.Small" 
-                                          Variant="Variant.Outlined" 
-                                          Color="Color.Secondary" 
-                                          StartIcon="@Icons.Material.Filled.Code"
-                                          Href="@($"git-client://clone/?repo={repo.HtmlUrl}")">
+                                <a href="git-client://clone/?repo=@repo.HtmlUrl" 
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-code me-1"></i>
                                     VS
-                                </MudButton>
-                                <MudButton Size="Size.Small" 
-                                          Variant="Variant.Filled" 
-                                          Color="Color.Success" 
-                                          StartIcon="@Icons.Material.Filled.Add"
-                                          OnClick="() => ShowAddTaskModal(repo)">
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-success btn-sm"
+                                        @onclick="() => ShowAddTaskModal(repo)">
+                                    <i class="bi bi-plus me-1"></i>
                                     Task
-                                </MudButton>
+                                </button>
                             </MudStack>
                         </MudCardActions>
                     </MudCard>
@@ -224,24 +217,21 @@ else
             </MudCardContent>
             <MudCardActions>
                 <MudStack Row="true" Spacing="1" Style="width: 100%" Wrap="Wrap.Wrap">
-                    <MudButton Size="Size.Small" 
-                              Variant="Variant.Outlined" 
-                              Color="Color.Primary" 
-                              StartIcon="@Icons.Material.Filled.Add">
+                    <button type="button" 
+                            class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-plus me-1"></i>
                         Watch
-                    </MudButton>
-                    <MudButton Size="Size.Small" 
-                              Variant="Variant.Outlined" 
-                              Color="Color.Secondary" 
-                              StartIcon="@Icons.Material.Filled.Code">
+                    </button>
+                    <button type="button" 
+                            class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-code me-1"></i>
                         VS
-                    </MudButton>
-                    <MudButton Size="Size.Small" 
-                              Variant="Variant.Filled" 
-                              Color="Color.Success" 
-                              StartIcon="@Icons.Material.Filled.Add">
+                    </button>
+                    <button type="button" 
+                            class="btn btn-success btn-sm">
+                        <i class="bi bi-plus me-1"></i>
                         Task
-                    </MudButton>
+                    </button>
                 </MudStack>
             </MudCardActions>
         </MudCard>
@@ -284,24 +274,21 @@ else
             </MudCardContent>
             <MudCardActions>
                 <MudStack Row="true" Spacing="1" Style="width: 100%" Wrap="Wrap.Wrap">
-                    <MudButton Size="Size.Small" 
-                              Variant="Variant.Outlined" 
-                              Color="Color.Primary" 
-                              StartIcon="@Icons.Material.Filled.Add">
+                    <button type="button" 
+                            class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-plus me-1"></i>
                         Watch
-                    </MudButton>
-                    <MudButton Size="Size.Small" 
-                              Variant="Variant.Outlined" 
-                              Color="Color.Secondary" 
-                              StartIcon="@Icons.Material.Filled.Code">
+                    </button>
+                    <button type="button" 
+                            class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-code me-1"></i>
                         VS
-                    </MudButton>
-                    <MudButton Size="Size.Small" 
-                              Variant="Variant.Filled" 
-                              Color="Color.Success" 
-                              StartIcon="@Icons.Material.Filled.Add">
+                    </button>
+                    <button type="button" 
+                            class="btn btn-success btn-sm">
+                        <i class="bi bi-plus me-1"></i>
                         Task
-                    </MudButton>
+                    </button>
                 </MudStack>
             </MudCardActions>
         </MudCard>
@@ -343,24 +330,21 @@ else
             </MudCardContent>
             <MudCardActions>
                 <MudStack Row="true" Spacing="1" Style="width: 100%" Wrap="Wrap.Wrap">
-                    <MudButton Size="Size.Small" 
-                              Variant="Variant.Outlined" 
-                              Color="Color.Primary" 
-                              StartIcon="@Icons.Material.Filled.Add">
+                    <button type="button" 
+                            class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-plus me-1"></i>
                         Watch
-                    </MudButton>
-                    <MudButton Size="Size.Small" 
-                              Variant="Variant.Outlined" 
-                              Color="Color.Secondary" 
-                              StartIcon="@Icons.Material.Filled.Code">
+                    </button>
+                    <button type="button" 
+                            class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-code me-1"></i>
                         VS
-                    </MudButton>
-                    <MudButton Size="Size.Small" 
-                              Variant="Variant.Filled" 
-                              Color="Color.Success" 
-                              StartIcon="@Icons.Material.Filled.Add">
+                    </button>
+                    <button type="button" 
+                            class="btn btn-success btn-sm">
+                        <i class="bi bi-plus me-1"></i>
                         Task
-                    </MudButton>
+                    </button>
                 </MudStack>
             </MudCardActions>
         </MudCard>
@@ -392,17 +376,21 @@ else
                       Class="mb-4" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="CloseAddTaskModal" Variant="Variant.Text">Cancel</MudButton>
-        <MudButton OnClick="CreateTask" 
-                   Variant="Variant.Filled" 
-                   Color="Color.Primary" 
-                   Disabled="@(string.IsNullOrWhiteSpace(newTaskTitle) || isCreatingTask)">
+        <button type="button" 
+                class="btn btn-outline-secondary"
+                @onclick="CloseAddTaskModal">
+            Cancel
+        </button>
+        <button type="button" 
+                class="btn btn-primary"
+                @onclick="CreateTask"
+                disabled="@(string.IsNullOrWhiteSpace(newTaskTitle) || isCreatingTask)">
             @if (isCreatingTask)
             {
                 <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
             }
             Create Task
-        </MudButton>
+        </button>
     </DialogActions>
 </MudDialog>
 
