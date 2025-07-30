@@ -1,7 +1,84 @@
-﻿<MudNavMenu>
-    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
-    <MudNavLink Href="repositories" Icon="@Icons.Material.Filled.FolderOpen">Repositories</MudNavLink>
-    <MudNavLink Href="management" Icon="@Icons.Material.Filled.ManageAccounts">Management</MudNavLink>
-    <MudNavLink Href="settings" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
-</MudNavMenu>
+﻿<nav class="nav flex-column">
+    <a class="nav-link d-flex align-items-center py-2 px-3 @GetNavLinkClass("")" 
+       href="">
+        <i class="bi bi-house me-2"></i>
+        Home
+    </a>
+    <a class="nav-link d-flex align-items-center py-2 px-3 @GetNavLinkClass("repositories")" 
+       href="repositories">
+        <i class="bi bi-folder-open me-2"></i>
+        Repositories
+    </a>
+    <a class="nav-link d-flex align-items-center py-2 px-3 @GetNavLinkClass("management")" 
+       href="management">
+        <i class="bi bi-person-gear me-2"></i>
+        Management
+    </a>
+    <a class="nav-link d-flex align-items-center py-2 px-3 @GetNavLinkClass("settings")" 
+       href="settings">
+        <i class="bi bi-gear me-2"></i>
+        Settings
+    </a>
+</nav>
+
+<style>
+    .nav-link {
+        color: #6c757d;
+        text-decoration: none;
+        border-radius: 0.375rem;
+        margin: 0.125rem 0.5rem;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .nav-link:hover {
+        color: #495057;
+        background-color: #e9ecef;
+    }
+
+    .nav-link.active {
+        color: #0d6efd;
+        background-color: #e7f1ff;
+        font-weight: 500;
+    }
+
+    .nav-link i {
+        width: 1.25rem;
+        text-align: center;
+    }
+</style>
+
+@code {
+    [Inject] public NavigationManager Navigation { get; set; } = default!;
+
+    private string GetNavLinkClass(string href)
+    {
+        var currentPath = Navigation.ToBaseRelativePath(Navigation.Uri).ToLower();
+        
+        // Handle home page specially
+        if (string.IsNullOrEmpty(href))
+        {
+            return string.IsNullOrEmpty(currentPath) || currentPath == "/" ? "active" : "";
+        }
+        
+        // For other pages, check if current path starts with the href
+        return currentPath.StartsWith(href.ToLower()) ? "active" : "";
+    }
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+}
+
+@implements IDisposable
 
