@@ -8,51 +8,56 @@
 
 <PageTitle>Repositories</PageTitle>
 
-<p>test12343233</p>
+<p>test123</p>
 
 <!-- Repository Header Card -->
-<MudPaper Elevation="2" Class="pa-4 mb-4" Style="background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);">
-    <MudStack Spacing="1">
-        <MudBreadcrumbs Separator="@Icons.Material.Filled.ChevronRight">
-            <MudBreadcrumbItem Href="/">Home</MudBreadcrumbItem>
-            <MudBreadcrumbItem Href="/repositories" Disabled="true">Repositories</MudBreadcrumbItem>
-        </MudBreadcrumbs>
-        <MudDivider />
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-            <MudIcon Icon="@Icons.Material.Filled.Folder" Color="Color.Primary" Size="Size.Large" />
-            <MudText Typo="Typo.h4" Color="Color.Default">GitHub Repositories</MudText>
-        </MudStack>
-        <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-1">Browse and manage your GitHub repositories.</MudText>
-    </MudStack>
-</MudPaper>
+<div class="card mb-4" style="background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%); color: white;">
+    <div class="card-body p-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2" style="background: transparent;">
+                <li class="breadcrumb-item"><a href="/" class="text-light">Home</a></li>
+                <li class="breadcrumb-item active text-light" aria-current="page">Repositories</li>
+            </ol>
+        </nav>
+        <hr class="border-light opacity-25" />
+        <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-folder fs-2 text-primary me-2"></i>
+            <h4 class="mb-0 text-white">GitHub Repositories</h4>
+        </div>
+        <p class="text-light opacity-75 mt-1 mb-0">Browse and manage your GitHub repositories.</p>
+    </div>
+</div>
 
-<MudText Typo="Typo.h3" GutterBottom="true">GitHub Repositories</MudText>
+<h3 class="mb-3">GitHub Repositories</h3>
 
 @if (!AuthService.IsAuthenticated)
 {
-    <MudAlert Severity="Severity.Warning">
-        <MudText Typo="Typo.h6" Class="mb-2">Authentication Required</MudText>
-        <MudText>
+    <div class="alert alert-warning" role="alert">
+        <h6 class="alert-heading mb-2">Authentication Required</h6>
+        <p class="mb-0">
             Please configure your GitHub token in the 
-            <MudLink Href="/settings" Color="Color.Primary">Settings</MudLink> 
+            <a href="/settings" class="alert-link">Settings</a> 
             page to access repositories.
-        </MudText>
-    </MudAlert>
+        </p>
+    </div>
 }
 else
 {
-    <MudGrid Class="mb-4">
-        <MudItem xs="12" md="8">
-            <MudTextField @bind-Value="searchQuery" 
-                          Label="Search repositories..." 
-                          Variant="Variant.Outlined" 
-                          Adornment="Adornment.End" 
-                          AdornmentIcon="@Icons.Material.Filled.Search"
-                          @onkeypress="OnSearchKeyPress"
-                          FullWidth="true" />
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudStack Row="true" Spacing="2">
+    <div class="row mb-4">
+        <div class="col-12 col-md-8 mb-3 mb-md-0">
+            <div class="input-group">
+                <input type="text" 
+                       class="form-control" 
+                       placeholder="Search repositories..." 
+                       @bind="searchQuery" 
+                       @onkeypress="OnSearchKeyPress" />
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                </span>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="d-flex gap-2">
                 <button type="button" 
                         class="btn btn-primary btn-sm"
                         @onclick="SearchRepositories">
@@ -65,72 +70,74 @@ else
                     <i class="bi bi-folder me-1"></i>
                     My Repos
                 </button>
-            </MudStack>
-        </MudItem>
-    </MudGrid>
+            </div>
+        </div>
+    </div>
 
     @if (!isLoading && repositories.Any())
     {
-        <MudText Typo="Typo.body2" Class="mb-4">
-            @repositories.Count Repository@(repositories.Count == 1 ? "" : "s1a23a")
-        </MudText>
+        <p class="text-muted mb-4">
+            @repositories.Count Repository@(repositories.Count == 1 ? "" : "s")
+        </p>
     }
 
     @if (isLoading)
     {
-        <MudStack AlignItems="AlignItems.Center" Class="py-8">
-            <MudProgressCircular Indeterminate="true" />
-            <MudText Typo="Typo.body2">Loading repositories...</MudText>
-        </MudStack>
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading repositories...</p>
+        </div>
     }
     else if (repositories.Any())
     {
-        <MudGrid>
+        <div class="row repositories-grid">
             @foreach (var repo in repositories)
             {
-                <MudItem xs="12" sm="6" md="4" lg="3">
-                    <MudCard Class="h-100 d-flex flex-column">
-                        <MudCardContent Class="flex-grow-1">
-                            <MudStack>
-                                <MudText Typo="Typo.h6" Class="d-flex align-center">
-                                    <MudLink Href="@($"/issues/{repo.Owner.Login}/{repo.Name}")" Color="Color.Primary">
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+                    <div class="card h-100 d-flex flex-column">
+                        <div class="card-body flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                                <h6 class="card-title mb-0 me-2">
+                                    <a href="/issues/@repo.Owner.Login/@repo.Name" class="text-decoration-none">
                                         @repo.Name
-                                    </MudLink>
-                                    @if (repo.Private)
-                                    {
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Private</MudText>
-                                    }
-                                </MudText>
-                                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">@repo.Owner.Login</MudText>
-                                <MudText Typo="Typo.body2">@repo.Description</MudText>
-                                
-                                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-2">
-                                    <MudStack Row="true" Spacing="3">
-                                        <MudText Typo="Typo.caption" Class="d-flex align-center">
-                                            <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" Class="mr-1" />
-                                            @repo.StargazersCount
-                                        </MudText>
-                                        <MudText Typo="Typo.caption" Class="d-flex align-center">
-                                            <MudIcon Icon="@Icons.Material.Filled.CallSplit" Size="Size.Small" Class="mr-1" />
-                                            @repo.ForksCount
-                                        </MudText>
-                                        <MudLink Href="@($"/issues/{repo.Owner.Login}/{repo.Name}")" Class="d-flex align-center" Color="Color.Primary">
-                                            <MudIcon Icon="@Icons.Material.Filled.BugReport" Size="Size.Small" Class="mr-1" />
-                                            <MudText Typo="Typo.caption">@repo.OpenIssuesCount</MudText>
-                                        </MudLink>
-                                    </MudStack>
-                                </MudStack>
-                                
-                                @if (!string.IsNullOrEmpty(repo.Language))
+                                    </a>
+                                </h6>
+                                @if (repo.Private)
                                 {
-                                    <MudText Typo="Typo.caption" Color="Color.Primary" Class="align-self-start">
-                                        @repo.Language
-                                    </MudText>
+                                    <small class="text-muted">Private</small>
                                 }
-                            </MudStack>
-                        </MudCardContent>
-                        <MudCardActions>
-                            <MudStack Row="true" Spacing="1" Style="width: 100%" Wrap="Wrap.Wrap">
+                            </div>
+                            <p class="text-muted small mb-2">@repo.Owner.Login</p>
+                            <p class="card-text small">@repo.Description</p>
+                            
+                            <div class="d-flex justify-content-between mt-2 mb-3">
+                                <div class="d-flex gap-3">
+                                    <small class="text-muted d-flex align-items-center">
+                                        <i class="bi bi-star me-1"></i>
+                                        @repo.StargazersCount
+                                    </small>
+                                    <small class="text-muted d-flex align-items-center">
+                                        <i class="bi bi-diagram-2 me-1"></i>
+                                        @repo.ForksCount
+                                    </small>
+                                    <a href="/issues/@repo.Owner.Login/@repo.Name" class="text-decoration-none d-flex align-items-center">
+                                        <i class="bi bi-bug me-1"></i>
+                                        <small>@repo.OpenIssuesCount</small>
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            @if (!string.IsNullOrEmpty(repo.Language))
+                            {
+                                <small class="text-primary">
+                                    @repo.Language
+                                </small>
+                            }
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex flex-wrap gap-1">
                                 @if (RepositoryService.IsWatched(repo.Id))
                                 {
                                     <button type="button" 
@@ -165,58 +172,58 @@ else
                                     <i class="bi bi-plus me-1"></i>
                                     Task
                                 </button>
-                            </MudStack>
-                        </MudCardActions>
-                    </MudCard>
-                </MudItem>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             }
-        </MudGrid>
+        </div>
     }
 }
 
 <!-- Demo cards for testing styling - Always show for now -->
-<MudText Typo="Typo.body2" Class="mb-4">
+<p class="text-muted mb-4">
     3 Demo Repositories (Enhanced Border Testing)
-</MudText>
-<MudGrid>
+</p>
+<div class="row repositories-grid">
     <!-- Demo Card 1 -->
-    <MudItem xs="12" sm="6" md="4" lg="3">
-        <MudCard Class="h-100 d-flex flex-column">
-            <MudCardContent Class="flex-grow-1">
-                <MudStack>
-                    <MudText Typo="Typo.h6" Class="d-flex align-center">
-                        <MudLink Href="#" Color="Color.Primary">
+    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+        <div class="card h-100 d-flex flex-column">
+            <div class="card-body flex-grow-1">
+                <div class="d-flex align-items-center mb-2">
+                    <h6 class="card-title mb-0 me-2">
+                        <a href="#" class="text-decoration-none">
                             ChromeVolumeController
-                        </MudLink>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Private</MudText>
-                    </MudText>
-                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">DontDoThat21</MudText>
-                    <MudText Typo="Typo.body2">A simple Chrome extension that allows you to control the volume of individual tabs from a convenient popup interface.</MudText>
-                    
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-2">
-                        <MudStack Row="true" Spacing="3">
-                            <MudText Typo="Typo.caption" Class="d-flex align-center">
-                                <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" Class="mr-1" />
-                                0
-                            </MudText>
-                            <MudText Typo="Typo.caption" Class="d-flex align-center">
-                                <MudIcon Icon="@Icons.Material.Filled.CallSplit" Size="Size.Small" Class="mr-1" />
-                                0
-                            </MudText>
-                            <MudLink Href="#" Class="d-flex align-center" Color="Color.Primary">
-                                <MudIcon Icon="@Icons.Material.Filled.BugReport" Size="Size.Small" Class="mr-1" />
-                                <MudText Typo="Typo.caption">2</MudText>
-                            </MudLink>
-                        </MudStack>
-                    </MudStack>
-                    
-                    <MudText Typo="Typo.caption" Color="Color.Primary" Class="align-self-start">
-                        JavaScript
-                    </MudText>
-                </MudStack>
-            </MudCardContent>
-            <MudCardActions>
-                <MudStack Row="true" Spacing="1" Style="width: 100%" Wrap="Wrap.Wrap">
+                        </a>
+                    </h6>
+                    <small class="text-muted">Private</small>
+                </div>
+                <p class="text-muted small mb-2">DontDoThat21</p>
+                <p class="card-text small">A simple Chrome extension that allows you to control the volume of individual tabs from a convenient popup interface.</p>
+                
+                <div class="d-flex justify-content-between mt-2 mb-3">
+                    <div class="d-flex gap-3">
+                        <small class="text-muted d-flex align-items-center">
+                            <i class="bi bi-star me-1"></i>
+                            0
+                        </small>
+                        <small class="text-muted d-flex align-items-center">
+                            <i class="bi bi-diagram-2 me-1"></i>
+                            0
+                        </small>
+                        <a href="#" class="text-decoration-none d-flex align-items-center">
+                            <i class="bi bi-bug me-1"></i>
+                            <small>2</small>
+                        </a>
+                    </div>
+                </div>
+                
+                <small class="text-primary">
+                    JavaScript
+                </small>
+            </div>
+            <div class="card-footer bg-transparent">
+                <div class="d-flex flex-wrap gap-1">
                     <button type="button" 
                             class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-plus me-1"></i>
@@ -232,48 +239,48 @@ else
                         <i class="bi bi-plus me-1"></i>
                         Task
                     </button>
-                </MudStack>
-            </MudCardActions>
-        </MudCard>
-    </MudItem>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Demo Card 2 -->
-    <MudItem xs="12" sm="6" md="4" lg="3">
-        <MudCard Class="h-100 d-flex flex-column">
-            <MudCardContent Class="flex-grow-1">
-                <MudStack>
-                    <MudText Typo="Typo.h6" Class="d-flex align-center">
-                        <MudLink Href="#" Color="Color.Primary">
+    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+        <div class="card h-100 d-flex flex-column">
+            <div class="card-body flex-grow-1">
+                <div class="d-flex align-items-center mb-2">
+                    <h6 class="card-title mb-0 me-2">
+                        <a href="#" class="text-decoration-none">
                             chromiumBorderlessVideos
-                        </MudLink>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">Private</MudText>
-                    </MudText>
-                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">DontDoThat21</MudText>
-                    <MudText Typo="Typo.body2">CleanVideo UI popups prioritizing less clutter</MudText>
-                    
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-2">
-                        <MudStack Row="true" Spacing="3">
-                            <MudText Typo="Typo.caption" Class="d-flex align-center">
-                                <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" Class="mr-1" />
-                                0
-                            </MudText>
-                            <MudText Typo="Typo.caption" Class="d-flex align-center">
-                                <MudIcon Icon="@Icons.Material.Filled.CallSplit" Size="Size.Small" Class="mr-1" />
-                                0
-                            </MudText>
-                            <MudLink Href="#" Class="d-flex align-center" Color="Color.Primary">
-                                <MudIcon Icon="@Icons.Material.Filled.BugReport" Size="Size.Small" Class="mr-1" />
-                                <MudText Typo="Typo.caption">1</MudText>
-                            </MudLink>
-                        </MudStack>
-                    </MudStack>
-                    
-                    <MudText Typo="Typo.caption" Color="Color.Primary" Class="align-self-start">
-                        HTML
-                    </MudText>
-                </MudStack>
-            </MudCardContent>
-            <MudCardActions>
-                <MudStack Row="true" Spacing="1" Style="width: 100%" Wrap="Wrap.Wrap">
+                        </a>
+                    </h6>
+                    <small class="text-muted">Private</small>
+                </div>
+                <p class="text-muted small mb-2">DontDoThat21</p>
+                <p class="card-text small">CleanVideo UI popups prioritizing less clutter</p>
+                
+                <div class="d-flex justify-content-between mt-2 mb-3">
+                    <div class="d-flex gap-3">
+                        <small class="text-muted d-flex align-items-center">
+                            <i class="bi bi-star me-1"></i>
+                            0
+                        </small>
+                        <small class="text-muted d-flex align-items-center">
+                            <i class="bi bi-diagram-2 me-1"></i>
+                            0
+                        </small>
+                        <a href="#" class="text-decoration-none d-flex align-items-center">
+                            <i class="bi bi-bug me-1"></i>
+                            <small>1</small>
+                        </a>
+                    </div>
+                </div>
+                
+                <small class="text-primary">
+                    HTML
+                </small>
+            </div>
+            <div class="card-footer bg-transparent">
+                <div class="d-flex flex-wrap gap-1">
                     <button type="button" 
                             class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-plus me-1"></i>
@@ -289,47 +296,45 @@ else
                         <i class="bi bi-plus me-1"></i>
                         Task
                     </button>
-                </MudStack>
-            </MudCardActions>
-        </MudCard>
-    </MudItem>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Demo Card 3 -->
-    <MudItem xs="12" sm="6" md="4" lg="3">
-        <MudCard Class="h-100 d-flex flex-column">
-            <MudCardContent Class="flex-grow-1">
-                <MudStack>
-                    <MudText Typo="Typo.h6" Class="d-flex align-center">
-                        <MudLink Href="#" Color="Color.Primary">
-                            chromiumSearchEngineRedirect
-                        </MudLink>
-                    </MudText>
-                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">DontDoThat21</MudText>
-                    <MudText Typo="Typo.body2">chromiumSearchEngineRedirect (maybe one day)</MudText>
-                    
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-2">
-                        <MudStack Row="true" Spacing="3">
-                            <MudText Typo="Typo.caption" Class="d-flex align-center">
-                                <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" Class="mr-1" />
-                                0
-                            </MudText>
-                            <MudText Typo="Typo.caption" Class="d-flex align-center">
-                                <MudIcon Icon="@Icons.Material.Filled.CallSplit" Size="Size.Small" Class="mr-1" />
-                                0
-                            </MudText>
-                            <MudLink Href="#" Class="d-flex align-center" Color="Color.Primary">
-                                <MudIcon Icon="@Icons.Material.Filled.BugReport" Size="Size.Small" Class="mr-1" />
-                                <MudText Typo="Typo.caption">0</MudText>
-                            </MudLink>
-                        </MudStack>
-                    </MudStack>
-                    
-                    <MudText Typo="Typo.caption" Color="Color.Primary" Class="align-self-start">
-                        HTML
-                    </MudText>
-                </MudStack>
-            </MudCardContent>
-            <MudCardActions>
-                <MudStack Row="true" Spacing="1" Style="width: 100%" Wrap="Wrap.Wrap">
+    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+        <div class="card h-100 d-flex flex-column">
+            <div class="card-body flex-grow-1">
+                <h6 class="card-title mb-2">
+                    <a href="#" class="text-decoration-none">
+                        chromiumSearchEngineRedirect
+                    </a>
+                </h6>
+                <p class="text-muted small mb-2">DontDoThat21</p>
+                <p class="card-text small">chromiumSearchEngineRedirect (maybe one day)</p>
+                
+                <div class="d-flex justify-content-between mt-2 mb-3">
+                    <div class="d-flex gap-3">
+                        <small class="text-muted d-flex align-items-center">
+                            <i class="bi bi-star me-1"></i>
+                            0
+                        </small>
+                        <small class="text-muted d-flex align-items-center">
+                            <i class="bi bi-diagram-2 me-1"></i>
+                            0
+                        </small>
+                        <a href="#" class="text-decoration-none d-flex align-items-center">
+                            <i class="bi bi-bug me-1"></i>
+                            <small>0</small>
+                        </a>
+                    </div>
+                </div>
+                
+                <small class="text-primary">
+                    HTML
+                </small>
+            </div>
+            <div class="card-footer bg-transparent">
+                <div class="d-flex flex-wrap gap-1">
                     <button type="button" 
                             class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-plus me-1"></i>
@@ -345,54 +350,73 @@ else
                         <i class="bi bi-plus me-1"></i>
                         Task
                     </button>
-                </MudStack>
-            </MudCardActions>
-        </MudCard>
-    </MudItem>
-</MudGrid>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-<MudDialog @bind-Visible="showAddTaskModal" MaxWidth="MaxWidth.Medium">
-    <DialogContent>
-        <MudText Typo="Typo.h6" Class="mb-4">Add Task to @selectedRepository?.Name</MudText>
-        
-        <MudTextField @bind-Value="newTaskTitle" 
-                      Label="Task Title *" 
-                      Variant="Variant.Outlined" 
-                      Required="true"
-                      Class="mb-4" />
-        
-        <MudTextField @bind-Value="newTaskDescription" 
-                      Label="Task Description" 
-                      Variant="Variant.Outlined" 
-                      Lines="4"
-                      Class="mb-4" />
-        
-        <MudTextField Value="@GetTaskJson()" 
-                      Label="Task JSON (MCP Format)" 
-                      Variant="Variant.Outlined" 
-                      Lines="6"
-                      ReadOnly="true"
-                      HelperText="This JSON shows the MCP metadata that will be included with the GitHub issue."
-                      Class="mb-4" />
-    </DialogContent>
-    <DialogActions>
-        <button type="button" 
-                class="btn btn-outline-secondary"
-                @onclick="CloseAddTaskModal">
-            Cancel
-        </button>
-        <button type="button" 
-                class="btn btn-primary"
-                @onclick="CreateTask"
-                disabled="@(string.IsNullOrWhiteSpace(newTaskTitle) || isCreatingTask)">
-            @if (isCreatingTask)
-            {
-                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-            }
-            Create Task
-        </button>
-    </DialogActions>
-</MudDialog>
+<!-- Modal for adding tasks -->
+@if (showAddTaskModal && selectedRepository != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Task to @selectedRepository.Name</h5>
+                    <button type="button" class="btn-close" @onclick="CloseAddTaskModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="taskTitle" class="form-label">Task Title *</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="taskTitle"
+                               @bind="newTaskTitle" 
+                               required />
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="taskDescription" class="form-label">Task Description</label>
+                        <textarea class="form-control" 
+                                  id="taskDescription"
+                                  rows="4"
+                                  @bind="newTaskDescription"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="taskJson" class="form-label">Task JSON (MCP Format)</label>
+                        <textarea class="form-control" 
+                                  id="taskJson"
+                                  rows="6"
+                                  readonly
+                                  value="@GetTaskJson()"></textarea>
+                        <div class="form-text">This JSON shows the MCP metadata that will be included with the GitHub issue.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" 
+                            class="btn btn-secondary"
+                            @onclick="CloseAddTaskModal">
+                        Cancel
+                    </button>
+                    <button type="button" 
+                            class="btn btn-primary"
+                            @onclick="CreateTask"
+                            disabled="@(string.IsNullOrWhiteSpace(newTaskTitle) || isCreatingTask)">
+                        @if (isCreatingTask)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </span>
+                        }
+                        Create Task
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     private List<GitHubRepository> repositories = new();
