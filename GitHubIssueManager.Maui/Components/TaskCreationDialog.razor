@@ -1,80 +1,111 @@
-@using GitHubIssueManager.Maui.Models
+﻿@using GitHubIssueManager.Maui.Models
 @using GitHubIssueManager.Maui.Services
-@using MudBlazor
 @inject GitHubService GitHubService
 
-<MudDialog>
-    <TitleContent>
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-            <MudIcon Icon="@Icons.Material.Filled.Assignment" Color="Color.Primary" />
-            <MudText Typo="Typo.h6">Create MCP Task for @Repository?.Name</MudText>
-        </MudStack>
-    </TitleContent>
-    <DialogContent>
-        <MudStack Spacing="3">
-            <MudTextField @bind-Value="taskTitle" 
-                          Label="Task Title *" 
-                          Variant="Variant.Outlined" 
-                          Required="true"
-                          Placeholder="Enter a descriptive title for the task..."
-                          HelperText="A clear, concise title that describes the task"
-                          Immediate="true" />
-            
-            <MudTextField @bind-Value="taskDescription" 
-                          Label="Task Description" 
-                          Variant="Variant.Outlined" 
-                          Lines="4"
-                          Placeholder="Provide detailed instructions for the task..."
-                          HelperText="Detailed description of what needs to be accomplished (supports Markdown)"
-                          Immediate="true" />
-            
-            <MudExpansionPanels Elevation="0">
-                <MudExpansionPanel Icon="@Icons.Material.Filled.Code" Text="MCP Metadata Preview">
-                    <MudTextField Value="@GetTaskJson()" 
-                                  Label="Generated MCP JSON" 
-                                  Variant="Variant.Outlined" 
-                                  Lines="8"
-                                  ReadOnly="true"
-                                  HelperText="This JSON metadata will be included with the GitHub issue for MCP integration" />
-                </MudExpansionPanel>
-            </MudExpansionPanels>
-            
-            @if (!string.IsNullOrEmpty(errorMessage))
-            {
-                <MudAlert Severity="Severity.Error" Dense="true">
-                    <MudText Typo="Typo.body2">@errorMessage</MudText>
-                </MudAlert>
-            }
-        </MudStack>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="Cancel" 
-                   Variant="Variant.Text"
-                   Color="Color.Default"
-                   StartIcon="@Icons.Material.Filled.Cancel">
-            Cancel
-        </MudButton>
-        <MudButton OnClick="CreateTask" 
-                   Variant="Variant.Filled" 
-                   Color="Color.Primary" 
-                   StartIcon="@Icons.Material.Filled.Add"
-                   Disabled="@(string.IsNullOrWhiteSpace(taskTitle) || isCreating)">
-            @if (isCreating)
-            {
-                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                <span>Creating...</span>
-            }
-            else
-            {
-                <span>Create Task</span>
-            }
-        </MudButton>
-    </DialogActions>
-</MudDialog>
+<div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title d-flex align-items-center">
+                    <span class="me-2 text-primary">📋</span>
+                    Create MCP Task for @Repository?.Name
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex flex-column gap-3">
+                    <div class="mb-3">
+                        <label for="taskTitle" class="form-label">Task Title *</label>
+                        <input type="text"
+                               class="form-control"
+                               id="taskTitle"
+                               @bind="taskTitle"
+                               @bind:event="oninput"
+                               placeholder="Enter a descriptive title for the task..."
+                               required />
+                        <div class="form-text">A clear, concise title that describes the task</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="taskDescription" class="form-label">Task Description</label>
+                        <textarea class="form-control"
+                                  id="taskDescription"
+                                  rows="4"
+                                  @bind="taskDescription"
+                                  @bind:event="oninput"
+                                  placeholder="Provide detailed instructions for the task..."></textarea>
+                        <div class="form-text">Detailed description of what needs to be accomplished (supports Markdown)</div>
+                    </div>
+
+                    <div class="accordion" id="mcpPreviewAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="mcpPreviewHeading">
+                                <button class="accordion-button collapsed d-flex align-items-center"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#mcpPreviewCollapse"
+                                        aria-expanded="false"
+                                        aria-controls="mcpPreviewCollapse">
+                                    <span class="me-2">💻</span>
+                                    MCP Metadata Preview
+                                </button>
+                            </h2>
+                            <div id="mcpPreviewCollapse"
+                                 class="accordion-collapse collapse"
+                                 aria-labelledby="mcpPreviewHeading"
+                                 data-bs-parent="#mcpPreviewAccordion">
+                                <div class="accordion-body">
+                                    <div class="mb-3">
+                                        <label for="generatedJson" class="form-label">Generated MCP JSON</label>
+                                        <textarea class="form-control font-monospace"
+                                                  id="generatedJson"
+                                                  rows="8"
+                                                  readonly
+                                                  value="@GetTaskJson()"></textarea>
+                                        <div class="form-text">This JSON metadata will be included with the GitHub issue for MCP integration</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @errorMessage
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary d-flex align-items-center"
+                        @onclick="Cancel">
+                    <span class="me-2">❌</span>
+                    Cancel
+                </button>
+                <button type="button"
+                        class="btn btn-primary d-flex align-items-center"
+                        @onclick="CreateTask"
+                        disabled="@(string.IsNullOrWhiteSpace(taskTitle) || isCreating)">
+                    @if (isCreating)
+                    {
+                        <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+                        <span>Creating...</span>
+                    }
+                    else
+                    {
+                        <span class="me-2">➕</span>
+                        <span>Create Task</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public GitHubRepository? Repository { get; set; }
+    [Parameter] public EventCallback<object> OnDialogResult { get; set; }
 
     private string taskTitle = string.Empty;
     private string taskDescription = string.Empty;
@@ -85,16 +116,16 @@
     {
         if (Repository == null || string.IsNullOrWhiteSpace(taskTitle))
             return;
-            
+
         isCreating = true;
         errorMessage = string.Empty;
         StateHasChanged();
-        
+
         try
         {
             var taskBody = GetFormattedIssueBody();
             var createdIssue = await GitHubService.CreateIssueAsync(Repository.Owner.Login, Repository.Name, taskTitle, taskBody);
-            MudDialog.Close(DialogResult.Ok(createdIssue));
+            await OnDialogResult.InvokeAsync(createdIssue);
         }
         catch (Exception ex)
         {
@@ -107,11 +138,11 @@
         }
     }
 
-    private void Cancel()
+    private async Task Cancel()
     {
-        MudDialog.Cancel();
+        await OnDialogResult.InvokeAsync(null);
     }
-    
+
     private string GetTaskJson()
     {
         var task = new
@@ -131,38 +162,38 @@
                 automated_workflow = false
             }
         };
-        
-        return System.Text.Json.JsonSerializer.Serialize(task, new System.Text.Json.JsonSerializerOptions 
-        { 
-            WriteIndented = true 
+
+        return System.Text.Json.JsonSerializer.Serialize(task, new System.Text.Json.JsonSerializerOptions
+        {
+            WriteIndented = true
         });
     }
-    
+
     private string GetFormattedIssueBody()
     {
         var body = taskDescription ?? "";
         var createdDate = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
         var repoName = Repository?.FullName ?? "";
         var jsonData = GetTaskJson().Replace("<!--", "").Replace("-->", "");
-        
+
         var mcpMetadata = $@"
 
 ---
 
-## ?? MCP Task Metadata
+## 🔧 MCP Task Metadata
 
 **Task Information:**
 - **Type**: MCP Task
-- **Status**: Open  
+- **Status**: Open
 - **Priority**: Medium
 - **Created**: {createdDate} UTC
 - **Repository**: {repoName}
 - **MCP Version**: 1.0
 
 **Integration Details:**
-- ? GitHub Issue Integration
-- ? Assignable to team members
-- ? MCP-compatible metadata included
+- ✅ GitHub Issue Integration
+- ✅ Assignable to team members
+- ✅ MCP-compatible metadata included
 
 <!-- MCP-JSON-START
 {jsonData}
