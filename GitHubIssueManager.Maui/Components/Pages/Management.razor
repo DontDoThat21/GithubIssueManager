@@ -10,511 +10,505 @@
 <PageTitle>Management - GitHub Issue Manager</PageTitle>
 
 <!-- Management Header Card -->
-<MudPaper Elevation="2" Class="pa-4 mb-4" Style="background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);">
-    <MudStack Spacing="1">
-        <MudBreadcrumbs Separator="@Icons.Material.Filled.ChevronRight">
-            <MudBreadcrumbItem Href="/">Home</MudBreadcrumbItem>
-            <MudBreadcrumbItem Href="/management" Disabled="true">Management</MudBreadcrumbItem>
-        </MudBreadcrumbs>
-        <MudDivider />
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-            <MudIcon Icon="@Icons.Material.Filled.ManageAccounts" Color="Color.Primary" Size="Size.Large" />
-            <MudText Typo="Typo.h4" Color="Color.Default">Repository & Issue Management</MudText>
-        </MudStack>
-        <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-1">
-            Centralized management for your watched repositories, issues, and system configuration.
-        </MudText>
-    </MudStack>
-</MudPaper>
+<div class="card mb-4" style="background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%); color: white;">
+    <div class="card-body p-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2" style="background: transparent;">
+                <li class="breadcrumb-item"><a href="/" class="text-light">Home</a></li>
+                <li class="breadcrumb-item active text-light" aria-current="page">Management</li>
+            </ol>
+        </nav>
+        <hr class="border-light opacity-25" />
+        <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-person-gear fs-2 text-primary me-2"></i>
+            <h4 class="mb-0 text-white">Repository & Issue Management</h4>
+        </div>
+        <p class="text-light opacity-75 mt-1 mb-0">Centralized management for your watched repositories, issues, and system configuration.</p>
+    </div>
+</div>
 
 @if (!AuthService.IsAuthenticated)
 {
-    <MudAlert Severity="Severity.Warning" Class="mb-4">
-        <MudText Typo="Typo.h6" Class="mb-2">Authentication Required</MudText>
-        <MudText>
-            Please configure your GitHub token in the 
-            <MudLink Href="/settings" Color="Color.Primary">Settings</MudLink> 
+    <div class="alert alert-warning mb-4" role="alert">
+        <h6 class="alert-heading mb-2">Authentication Required</h6>
+        <p class="mb-2">
+            Please configure your GitHub token in the
+            <a href="/settings" class="alert-link">Settings</a>
             page to access management features.
-        </MudText>
-        <MudStack Row="true" Spacing="2" Class="mt-3">
-            <MudButton Variant="Variant.Filled" 
-                       Color="Color.Primary" 
-                       StartIcon="@Icons.Material.Filled.Settings"
-                       Href="/settings">
+        </p>
+        <div class="d-flex gap-2 mt-3">
+            <a href="/settings" class="btn btn-primary btn-sm">
+                <i class="bi bi-gear me-1"></i>
                 Configure Token
-            </MudButton>
-        </MudStack>
-    </MudAlert>
+            </a>
+        </div>
+    </div>
 }
 else
 {
-    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs mb-4" id="managementTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="repository-tab" data-bs-toggle="tab" data-bs-target="#repository-pane" type="button" role="tab" aria-controls="repository-pane" aria-selected="true">
+                <i class="bi bi-folder me-2"></i>
+                Repository Management
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="statistics-tab" data-bs-toggle="tab" data-bs-target="#statistics-pane" type="button" role="tab" aria-controls="statistics-pane" aria-selected="false">
+                <i class="bi bi-graph-up me-2"></i>
+                Statistics & Insights
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="system-tab" data-bs-toggle="tab" data-bs-target="#system-pane" type="button" role="tab" aria-controls="system-pane" aria-selected="false">
+                <i class="bi bi-shield-check me-2"></i>
+                System Status
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="managementTabsContent">
         <!-- Repository Management Tab -->
-        <MudTabPanel Text="Repository Management" Icon="@Icons.Material.Filled.Folder">
-            <MudStack Spacing="4">
+        <div class="tab-pane fade show active" id="repository-pane" role="tabpanel" aria-labelledby="repository-tab">
+            <div class="stack" style="gap: 2rem;">
                 <!-- Watched Repositories Section -->
-                <MudCard>
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                <MudIcon Icon="@Icons.Material.Filled.Visibility" Color="Color.Primary" />
-                                <MudText Typo="Typo.h6">Watched Repositories</MudText>
-                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Text="@watchedRepos.Count().ToString()" />
-                            </MudStack>
-                        </CardHeaderContent>
-                        <CardHeaderActions>
-                            <MudButton StartIcon="@Icons.Material.Filled.Refresh" 
-                                       Color="Color.Primary" 
-                                       Variant="Variant.Text"
-                                       OnClick="RefreshRepositories"
-                                       Disabled="@isRefreshing">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-eye text-primary me-2"></i>
+                                <h5 class="mb-0">Watched Repositories</h5>
+                                <span class="badge bg-info ms-2">@watchedRepos.Count()</span>
+                            </div>
+                            <button type="button"
+                                    class="btn btn-outline-primary btn-sm"
+                                    @onclick="RefreshRepositories"
+                                    disabled="@isRefreshing">
                                 @if (isRefreshing)
                                 {
-                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                                 }
                                 else
                                 {
-                                    <span>Refresh</span>
+                                    <i class="bi bi-arrow-clockwise me-1"></i>
                                 }
-                            </MudButton>
-                        </CardHeaderActions>
-                    </MudCardHeader>
-                    <MudCardContent>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
                         @if (watchedRepos.Any())
                         {
-                            <MudStack Spacing="2">
+                            <div class="stack" style="gap: 1rem;">
                                 @foreach (var repo in watchedRepos)
                                 {
-                                    <MudPaper Elevation="1" Class="pa-3">
-                                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                                            <MudStack Spacing="1">
-                                                <MudText Typo="Typo.h6">
-                                                    <MudLink Href="@repo.HtmlUrl" Target="_blank" Color="Color.Primary">
-                                                        @repo.FullName
-                                                    </MudLink>
-                                                </MudText>
-                                                <MudText Typo="Typo.body2" Color="Color.Secondary">
-                                                    @repo.Description
-                                                </MudText>
-                                                <MudStack Row="true" Spacing="3" AlignItems="AlignItems.Center">
-                                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                                        <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Small" />
-                                                        <MudText Typo="Typo.caption">@repo.StargazersCount</MudText>
-                                                    </MudStack>
-                                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                                        <MudIcon Icon="@Icons.Material.Filled.BugReport" Color="Color.Error" Size="Size.Small" />
-                                                        <MudText Typo="Typo.caption">@repo.OpenIssuesCount issues</MudText>
-                                                    </MudStack>
-                                                    @if (!string.IsNullOrEmpty(repo.Language))
-                                                    {
-                                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                                            <MudIcon Icon="@Icons.Material.Filled.Code" Color="Color.Secondary" Size="Size.Small" />
-                                                            <MudText Typo="Typo.caption">@repo.Language</MudText>
-                                                        </MudStack>
-                                                    }
-                                                </MudStack>
-                                            </MudStack>
-                                            <MudStack Row="true" Spacing="1">
-                                                <MudButton Size="Size.Small" 
-                                                          Variant="Variant.Outlined" 
-                                                          Color="Color.Primary"
-                                                          StartIcon="@Icons.Material.Filled.BugReport"
-                                                          Href="@($"/issues/{repo.Owner.Login}/{repo.Name}")">
-                                                    Issues
-                                                </MudButton>
-                                                <MudButton Size="Size.Small" 
-                                                          Variant="Variant.Outlined" 
-                                                          Color="Color.Error"
-                                                          StartIcon="@Icons.Material.Filled.RemoveCircle"
-                                                          OnClick="() => RemoveRepository(repo)">
-                                                    Remove
-                                                </MudButton>
-                                            </MudStack>
-                                        </MudStack>
-                                    </MudPaper>
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="card-title mb-2">
+                                                        <a href="@repo.HtmlUrl" target="_blank" class="text-primary text-decoration-none">
+                                                            @repo.FullName
+                                                        </a>
+                                                    </h6>
+                                                    <p class="text-secondary mb-2">@repo.Description</p>
+                                                    <div class="d-flex gap-3 align-items-center">
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="bi bi-star text-warning me-1"></i>
+                                                            <small>@repo.StargazersCount</small>
+                                                        </div>
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="bi bi-bug text-danger me-1"></i>
+                                                            <small>@repo.OpenIssuesCount issues</small>
+                                                        </div>
+                                                        @if (!string.IsNullOrEmpty(repo.Language))
+                                                        {
+                                                            <div class="d-flex align-items-center">
+                                                                <i class="bi bi-code text-secondary me-1"></i>
+                                                                <small>@repo.Language</small>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex gap-1">
+                                                    <a href="/issues/@repo.Owner.Login/@repo.Name" class="btn btn-outline-primary btn-sm">
+                                                        <i class="bi bi-bug me-1"></i>
+                                                        Issues
+                                                    </a>
+                                                    <button type="button"
+                                                            class="btn btn-outline-danger btn-sm"
+                                                            @onclick="() => RemoveRepository(repo)">
+                                                        <i class="bi bi-dash-circle me-1"></i>
+                                                        Remove
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 }
-                            </MudStack>
+                            </div>
                         }
                         else
                         {
-                            <MudStack AlignItems="AlignItems.Center" Class="py-8">
-                                <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Size="Size.Large" Color="Color.Secondary" />
-                                <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
-                                    No repositories in your watchlist yet.
-                                </MudText>
-                                <MudButton Variant="Variant.Filled" 
-                                          Color="Color.Primary" 
-                                          StartIcon="@Icons.Material.Filled.Add"
-                                          Href="/repositories">
+                            <div class="text-center py-5">
+                                <div class="mb-3" style="font-size: 3rem;">📁</div>
+                                <p class="text-secondary mb-4">No repositories in your watchlist yet.</p>
+                                <a href="/repositories" class="btn btn-primary">
+                                    <i class="bi bi-plus me-1"></i>
                                     Add Repositories
-                                </MudButton>
-                            </MudStack>
+                                </a>
+                            </div>
                         }
-                    </MudCardContent>
-                </MudCard>
+                    </div>
+                </div>
 
                 <!-- Bulk Operations Section -->
-                <MudCard>
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                <MudIcon Icon="@Icons.Material.Filled.DynamicForm" Color="Color.Secondary" />
-                                <MudText Typo="Typo.h6">Bulk Operations</MudText>
-                            </MudStack>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudGrid>
-                            <MudItem xs="12" md="4">
-                                <MudPaper Elevation="1" Class="pa-4">
-                                    <MudStack Spacing="2">
-                                        <MudText Typo="Typo.h6">Repository Actions</MudText>
-                                        <MudButton Variant="Variant.Outlined" 
-                                                  Color="Color.Warning" 
-                                                  StartIcon="@Icons.Material.Filled.ClearAll"
-                                                  OnClick="() => showClearAllDialog = true"
-                                                  FullWidth="true"
-                                                  Size="Size.Small">
-                                            Clear All Watchlist
-                                        </MudButton>
-                                        <MudButton Variant="Variant.Outlined" 
-                                                  Color="Color.Info" 
-                                                  StartIcon="@Icons.Material.Filled.CloudDownload"
-                                                  OnClick="ExportWatchlist"
-                                                  FullWidth="true"
-                                                  Size="Size.Small">
-                                            Export Watchlist
-                                        </MudButton>
-                                    </MudStack>
-                                </MudPaper>
-                            </MudItem>
-                            <MudItem xs="12" md="4">
-                                <MudPaper Elevation="1" Class="pa-4">
-                                    <MudStack Spacing="2">
-                                        <MudText Typo="Typo.h6">Copy Git URLs</MudText>
-                                        <MudButton Variant="Variant.Outlined" 
-                                                  Color="Color.Success" 
-                                                  StartIcon="@Icons.Material.Filled.ContentCopy"
-                                                  OnClick="CopyAllGitUrls"
-                                                  Disabled="@isCopyingAllUrls"
-                                                  FullWidth="true"
-                                                  Size="Size.Small">
-                                            @if (isCopyingAllUrls)
-                                            {
-                                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 0.5rem;" />
-                                            }
-                                            Copy All Git URLs
-                                        </MudButton>
-                                        <MudButton Variant="Variant.Outlined" 
-                                                  Color="Color.Primary" 
-                                                  StartIcon="@Icons.Material.Filled.Visibility"
-                                                  OnClick="CopyWatchedGitUrls"
-                                                  Disabled="@isCopyingWatchedUrls"
-                                                  FullWidth="true"
-                                                  Size="Size.Small">
-                                            @if (isCopyingWatchedUrls)
-                                            {
-                                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 0.5rem;" />
-                                            }
-                                            Copy Watched Git URLs
-                                        </MudButton>
-                                    </MudStack>
-                                </MudPaper>
-                            </MudItem>
-                            <MudItem xs="12" md="4">
-                                <MudPaper Elevation="1" Class="pa-4">
-                                    <MudStack Spacing="2">
-                                        <MudText Typo="Typo.h6">Data Management</MudText>
-                                        <MudButton Variant="Variant.Outlined" 
-                                                  Color="Color.Primary" 
-                                                  StartIcon="@Icons.Material.Filled.Refresh"
-                                                  OnClick="RefreshAllData"
-                                                  Disabled="@isRefreshingAll"
-                                                  FullWidth="true"
-                                                  Size="Size.Small">
-                                            @if (isRefreshingAll)
-                                            {
-                                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 0.5rem;" />
-                                            }
-                                            Refresh All Data
-                                        </MudButton>
-                                        <MudButton Variant="Variant.Outlined" 
-                                                  Color="Color.Secondary" 
-                                                  StartIcon="@Icons.Material.Filled.Settings"
-                                                  Href="/settings"
-                                                  FullWidth="true"
-                                                  Size="Size.Small">
-                                            System Settings
-                                        </MudButton>
-                                    </MudStack>
-                                </MudPaper>
-                            </MudItem>
-                        </MudGrid>
-                    </MudCardContent>
-                </MudCard>
-            </MudStack>
-        </MudTabPanel>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-sliders text-secondary me-2"></i>
+                            <h5 class="mb-0">Bulk Operations</h5>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12 col-md-4 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Repository Actions</h6>
+                                        <div class="d-grid gap-2">
+                                            <button type="button"
+                                                    class="btn btn-outline-warning btn-sm"
+                                                    @onclick="() => showClearAllDialog = true">
+                                                <i class="bi bi-trash me-1"></i>
+                                                Clear All Watchlist
+                                            </button>
+                                            <button type="button"
+                                                    class="btn btn-outline-info btn-sm"
+                                                    @onclick="ExportWatchlist">
+                                                <i class="bi bi-download me-1"></i>
+                                                Export Watchlist
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Copy Git URLs</h6>
+                                        <div class="d-grid gap-2">
+                                            <button type="button"
+                                                    class="btn btn-outline-success btn-sm"
+                                                    @onclick="CopyAllGitUrls"
+                                                    disabled="@isCopyingAllUrls">
+                                                @if (isCopyingAllUrls)
+                                                {
+                                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-clipboard me-1"></i>
+                                                }
+                                                Copy All Git URLs
+                                            </button>
+                                            <button type="button"
+                                                    class="btn btn-outline-primary btn-sm"
+                                                    @onclick="CopyWatchedGitUrls"
+                                                    disabled="@isCopyingWatchedUrls">
+                                                @if (isCopyingWatchedUrls)
+                                                {
+                                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-eye me-1"></i>
+                                                }
+                                                Copy Watched Git URLs
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Data Management</h6>
+                                        <div class="d-grid gap-2">
+                                            <button type="button"
+                                                    class="btn btn-outline-primary btn-sm"
+                                                    @onclick="RefreshAllData"
+                                                    disabled="@isRefreshingAll">
+                                                @if (isRefreshingAll)
+                                                {
+                                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-arrow-clockwise me-1"></i>
+                                                }
+                                                Refresh All Data
+                                            </button>
+                                            <a href="/settings" class="btn btn-outline-secondary btn-sm">
+                                                <i class="bi bi-gear me-1"></i>
+                                                System Settings
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Statistics & Insights Tab -->
-        <MudTabPanel Text="Statistics & Insights" Icon="@Icons.Material.Filled.Analytics">
-            <MudStack Spacing="4">
+        <div class="tab-pane fade" id="statistics-pane" role="tabpanel" aria-labelledby="statistics-tab">
+            <div class="stack" style="gap: 2rem;">
                 <!-- Overview Statistics -->
-                <MudGrid>
-                    <MudItem xs="12" sm="6" md="3">
-                        <MudCard>
-                            <MudCardContent Class="text-center">
-                                <MudText Typo="Typo.h3" Color="Color.Primary">
-                                    @watchedRepos.Count()
-                                </MudText>
-                                <MudText Typo="Typo.body1" Color="Color.Secondary">
-                                    Watched Repositories
-                                </MudText>
-                            </MudCardContent>
-                        </MudCard>
-                    </MudItem>
-                    <MudItem xs="12" sm="6" md="3">
-                        <MudCard>
-                            <MudCardContent Class="text-center">
-                                <MudText Typo="Typo.h3" Color="Color.Warning">
-                                    @totalOpenIssues
-                                </MudText>
-                                <MudText Typo="Typo.body1" Color="Color.Secondary">
-                                    Total Open Issues
-                                </MudText>
-                            </MudCardContent>
-                        </MudCard>
-                    </MudItem>
-                    <MudItem xs="12" sm="6" md="3">
-                        <MudCard>
-                            <MudCardContent Class="text-center">
-                                <MudText Typo="Typo.h3" Color="Color.Info">
-                                    @totalStars
-                                </MudText>
-                                <MudText Typo="Typo.body1" Color="Color.Secondary">
-                                    Total Stars
-                                </MudText>
-                            </MudCardContent>
-                        </MudCard>
-                    </MudItem>
-                    <MudItem xs="12" sm="6" md="3">
-                        <MudCard>
-                            <MudCardContent Class="text-center">
-                                <MudText Typo="Typo.h3" Color="Color.Success">
-                                    @uniqueLanguages.Count
-                                </MudText>
-                                <MudText Typo="Typo.body1" Color="Color.Secondary">
-                                    Languages Used
-                                </MudText>
-                            </MudCardContent>
-                        </MudCard>
-                    </MudItem>
-                </MudGrid>
+                <div class="row">
+                    <div class="col-12 col-sm-6 col-md-3 mb-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h2 class="text-primary">@watchedRepos.Count()</h2>
+                                <p class="text-secondary mb-0">Watched Repositories</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3 mb-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h2 class="text-warning">@totalOpenIssues</h2>
+                                <p class="text-secondary mb-0">Total Open Issues</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3 mb-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h2 class="text-info">@totalStars</h2>
+                                <p class="text-secondary mb-0">Total Stars</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3 mb-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h2 class="text-success">@uniqueLanguages.Count</h2>
+                                <p class="text-secondary mb-0">Languages Used</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Repository Insights -->
-                <MudCard>
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h6">Repository Insights</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Repository Insights</h5>
+                    </div>
+                    <div class="card-body">
                         @if (watchedRepos.Any())
                         {
-                            <MudGrid>
-                                <MudItem xs="12" md="6">
-                                    <MudText Typo="Typo.subtitle1" Class="mb-3">Most Active Repositories (by Issues)</MudText>
+                            <div class="row">
+                                <div class="col-12 col-md-6 mb-4">
+                                    <h6 class="mb-3">Most Active Repositories (by Issues)</h6>
                                     @foreach (var repo in watchedRepos.OrderByDescending(r => r.OpenIssuesCount).Take(5))
                                     {
-                                        <MudPaper Elevation="1" Class="pa-2 mb-2">
-                                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                                                <MudText Typo="Typo.body2">@repo.Name</MudText>
-                                                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Text="@($"{repo.OpenIssuesCount} issues")" />
-                                            </MudStack>
-                                        </MudPaper>
+                                        <div class="card mb-2">
+                                            <div class="card-body py-2">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="small">@repo.Name</span>
+                                                    <span class="badge bg-warning">@repo.OpenIssuesCount issues</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     }
-                                </MudItem>
-                                <MudItem xs="12" md="6">
-                                    <MudText Typo="Typo.subtitle1" Class="mb-3">Most Popular Repositories (by Stars)</MudText>
+                                </div>
+                                <div class="col-12 col-md-6 mb-4">
+                                    <h6 class="mb-3">Most Popular Repositories (by Stars)</h6>
                                     @foreach (var repo in watchedRepos.OrderByDescending(r => r.StargazersCount).Take(5))
                                     {
-                                        <MudPaper Elevation="1" Class="pa-2 mb-2">
-                                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                                                <MudText Typo="Typo.body2">@repo.Name</MudText>
-                                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Text="@($"⭐ {repo.StargazersCount}")" />
-                                            </MudStack>
-                                        </MudPaper>
+                                        <div class="card mb-2">
+                                            <div class="card-body py-2">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="small">@repo.Name</span>
+                                                    <span class="badge bg-info">⭐ @repo.StargazersCount</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     }
-                                </MudItem>
-                            </MudGrid>
-                            
+                                </div>
+                            </div>
+
                             <!-- Language Distribution -->
                             @if (uniqueLanguages.Any())
                             {
-                                <MudDivider Class="my-4" />
-                                <MudText Typo="Typo.subtitle1" Class="mb-3">Programming Languages</MudText>
-                                <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                                <hr />
+                                <h6 class="mb-3">Programming Languages</h6>
+                                <div class="d-flex flex-wrap gap-1">
                                     @foreach (var language in uniqueLanguages.Take(10))
                                     {
-                                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Text="@language" />
+                                        <span class="badge bg-primary">@language</span>
                                     }
-                                </MudStack>
+                                </div>
                             }
                         }
                         else
                         {
-                            <MudStack AlignItems="AlignItems.Center" Class="py-4">
-                                <MudText Typo="Typo.body1" Color="Color.Secondary">
-                                    No data available. Add repositories to your watchlist to see insights.
-                                </MudText>
-                            </MudStack>
+                            <div class="text-center py-4">
+                                <p class="text-secondary">No data available. Add repositories to your watchlist to see insights.</p>
+                            </div>
                         }
-                    </MudCardContent>
-                </MudCard>
-            </MudStack>
-        </MudTabPanel>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- System Status Tab -->
-        <MudTabPanel Text="System Status" Icon="@Icons.Material.Filled.HealthAndSafety">
-            <MudStack Spacing="4">
+        <div class="tab-pane fade" id="system-pane" role="tabpanel" aria-labelledby="system-tab">
+            <div class="stack" style="gap: 2rem;">
                 <!-- Authentication Status -->
-                <MudCard>
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h6">Authentication Status</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                            <MudIcon Icon="@(AuthService.IsAuthenticated ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" 
-                                     Color="@(AuthService.IsAuthenticated ? Color.Success : Color.Error)" />
-                            <MudText Typo="Typo.body1">
-                                @(AuthService.IsAuthenticated ? "GitHub Token Configured" : "GitHub Token Not Configured")
-                            </MudText>
-                        </MudStack>
-                        @if (!AuthService.IsAuthenticated)
-                        {
-                            <MudButton Variant="Variant.Filled" 
-                                       Color="Color.Primary" 
-                                       StartIcon="@Icons.Material.Filled.Settings"
-                                       Href="/settings"
-                                       Class="mt-3">
-                                Configure Token
-                            </MudButton>
-                        }
-                    </MudCardContent>
-                </MudCard>
-
-                <!-- GitHub API Status -->
-                <MudCard>
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h6">GitHub API Connectivity</MudText>
-                        </CardHeaderContent>
-                        <CardHeaderActions>
-                            <MudButton StartIcon="@Icons.Material.Filled.Refresh" 
-                                       Color="Color.Primary" 
-                                       Variant="Variant.Text"
-                                       OnClick="CheckApiStatus"
-                                       Disabled="@isCheckingApi">
-                                @if (isCheckingApi)
-                                {
-                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
-                                }
-                                else
-                                {
-                                    <span>Test Connection</span>
-                                }
-                            </MudButton>
-                        </CardHeaderActions>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                            @if (apiStatus == null)
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Authentication Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            @if (AuthService.IsAuthenticated)
                             {
-                                <MudIcon Icon="@Icons.Material.Filled.QuestionMark" Color="Color.Info" />
-                                <MudText Typo="Typo.body1">API status unknown - click "Test Connection" to check</MudText>
-                            }
-                            else if (apiStatus == true)
-                            {
-                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
-                                <MudText Typo="Typo.body1">GitHub API is accessible</MudText>
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                <span>GitHub Token Configured</span>
                             }
                             else
                             {
-                                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" />
-                                <MudText Typo="Typo.body1">GitHub API is not accessible</MudText>
+                                <i class="bi bi-x-circle text-danger me-2"></i>
+                                <span>GitHub Token Not Configured</span>
                             }
-                        </MudStack>
+                        </div>
+                        @if (!AuthService.IsAuthenticated)
+                        {
+                            <a href="/settings" class="btn btn-primary">
+                                <i class="bi bi-gear me-1"></i>
+                                Configure Token
+                            </a>
+                        }
+                    </div>
+                </div>
+
+                <!-- GitHub API Status -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">GitHub API Connectivity</h5>
+                            <button type="button"
+                                    class="btn btn-outline-primary btn-sm"
+                                    @onclick="CheckApiStatus"
+                                    disabled="@isCheckingApi">
+                                @if (isCheckingApi)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-arrow-clockwise me-1"></i>
+                                }
+                                Test Connection
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            @if (apiStatus == null)
+                            {
+                                <i class="bi bi-question-circle text-info me-2"></i>
+                                <span>API status unknown - click "Test Connection" to check</span>
+                            }
+                            else if (apiStatus == true)
+                            {
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                <span>GitHub API is accessible</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-x-circle text-danger me-2"></i>
+                                <span>GitHub API is not accessible</span>
+                            }
+                        </div>
                         @if (!string.IsNullOrEmpty(apiErrorMessage))
                         {
-                            <MudAlert Severity="Severity.Error" Class="mt-3" Dense="true">
-                                <MudText Typo="Typo.body2">@apiErrorMessage</MudText>
-                            </MudAlert>
+                            <div class="alert alert-danger">
+                                <small>@apiErrorMessage</small>
+                            </div>
                         }
-                    </MudCardContent>
-                </MudCard>
+                    </div>
+                </div>
 
                 <!-- Application Information -->
-                <MudCard>
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h6">Application Information</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudGrid>
-                            <MudItem xs="12" md="6">
-                                <MudText Typo="Typo.body2" Color="Color.Secondary">Application Version</MudText>
-                                <MudText Typo="Typo.body1">GitHub Issue Manager v1.0</MudText>
-                            </MudItem>
-                            <MudItem xs="12" md="6">
-                                <MudText Typo="Typo.body2" Color="Color.Secondary">Framework</MudText>
-                                <MudText Typo="Typo.body1">.NET 8 Blazor Server</MudText>
-                            </MudItem>
-                            <MudItem xs="12" md="6">
-                                <MudText Typo="Typo.body2" Color="Color.Secondary">Last Updated</MudText>
-                                <MudText Typo="Typo.body1">@DateTime.UtcNow.ToString("MMM dd, yyyy")</MudText>
-                            </MudItem>
-                            <MudItem xs="12" md="6">
-                                <MudText Typo="Typo.body2" Color="Color.Secondary">UI Framework</MudText>
-                                <MudText Typo="Typo.body1">MudBlazor</MudText>
-                            </MudItem>
-                        </MudGrid>
-                    </MudCardContent>
-                </MudCard>
-            </MudStack>
-        </MudTabPanel>
-    </MudTabs>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Application Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12 col-md-6 mb-3">
+                                <small class="text-secondary">Application Version</small>
+                                <div>GitHub Issue Manager v1.0</div>
+                            </div>
+                            <div class="col-12 col-md-6 mb-3">
+                                <small class="text-secondary">Framework</small>
+                                <div>.NET 8 Blazor Server</div>
+                            </div>
+                            <div class="col-12 col-md-6 mb-3">
+                                <small class="text-secondary">Last Updated</small>
+                                <div>@DateTime.UtcNow.ToString("MMM dd, yyyy")</div>
+                            </div>
+                            <div class="col-12 col-md-6 mb-3">
+                                <small class="text-secondary">UI Framework</small>
+                                <div>Bootstrap 5</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
-<!-- Clear All Confirmation Dialog -->
-<MudDialog @bind-Visible="showClearAllDialog" Options="@(new DialogOptions { MaxWidth = MaxWidth.Small })">
-    <DialogContent>
-        <MudStack Spacing="3">
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Large" />
-                <MudText Typo="Typo.h6">Clear All Watched Repositories</MudText>
-            </MudStack>
-            <MudText Typo="Typo.body1">
-                Are you sure you want to remove all repositories from your watchlist? This action cannot be undone.
-            </MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">
-                This will remove <strong>@watchedRepos.Count()</strong> repositories from your watchlist.
-            </MudText>
-        </MudStack>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="() => showClearAllDialog = false" Variant="Variant.Text">
-            Cancel
-        </MudButton>
-        <MudButton OnClick="ClearAllRepositories" 
-                   Variant="Variant.Filled" 
-                   Color="Color.Warning"
-                   StartIcon="@Icons.Material.Filled.ClearAll">
-            Clear All
-        </MudButton>
-    </DialogActions>
-</MudDialog>
+<!-- Clear All Confirmation Modal -->
+@if (showClearAllDialog)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                        Clear All Watched Repositories
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="() => showClearAllDialog = false"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to remove all repositories from your watchlist? This action cannot be undone.</p>
+                    <p class="text-secondary">This will remove <strong>@watchedRepos.Count()</strong> repositories from your watchlist.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="() => showClearAllDialog = false">
+                        Cancel
+                    </button>
+                    <button type="button"
+                            class="btn btn-warning"
+                            @onclick="ClearAllRepositories">
+                        <i class="bi bi-trash me-1"></i>
+                        Clear All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     private IEnumerable<GitHubRepository> watchedRepos = new List<GitHubRepository>();
@@ -659,11 +653,11 @@ else
     {
         try
         {
-            var exportData = System.Text.Json.JsonSerializer.Serialize(watchedRepos, new System.Text.Json.JsonSerializerOptions 
-            { 
-                WriteIndented = true 
+            var exportData = System.Text.Json.JsonSerializer.Serialize(watchedRepos, new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true
             });
-            
+
             // In a real implementation, you would trigger a file download
             // For now, we'll just log it to console
             Console.WriteLine("Watchlist Export:");
@@ -687,15 +681,15 @@ else
         {
             // Get all repositories from GitHub API
             var allRepos = await GitHubService.GetRepositoriesAsync();
-            
+
             var gitUrls = allRepos
                 .Select(repo => $"{repo.HtmlUrl}.git")
                 .ToList();
-            
+
             var urlsText = string.Join(Environment.NewLine, gitUrls);
-            
+
             await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", urlsText);
-            
+
             Console.WriteLine($"Copied {gitUrls.Count} git URLs (all repositories) to clipboard");
         }
         catch (Exception ex)
@@ -722,11 +716,11 @@ else
             var gitUrls = watchedRepos
                 .Select(repo => $"{repo.HtmlUrl}.git")
                 .ToList();
-            
+
             var urlsText = string.Join(Environment.NewLine, gitUrls);
-            
+
             await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", urlsText);
-            
+
             Console.WriteLine($"Copied {gitUrls.Count} git URLs (watched repositories) to clipboard");
         }
         catch (Exception ex)
