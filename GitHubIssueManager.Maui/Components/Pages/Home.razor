@@ -5,222 +5,190 @@
 
 <PageTitle>GitHub Issue Manager</PageTitle>
 
-<MudText Typo="Typo.h3" GutterBottom="true">GitHub Issue Manager</MudText>
-<MudText Typo="Typo.subtitle1" Class="mb-4">Manage GitHub issues across multiple repositories with ease.</MudText>
+<h1 class="display-4">GitHub Issue Manager</h1>
+<p class="subtitle">Manage GitHub issues across multiple repositories with ease.</p>
 
 @if (!AuthService.IsAuthenticated)
 {
-    <MudGrid>
-        <MudItem xs="12" md="8">
-            <MudAlert Severity="Severity.Info" Class="mb-4">
-                <MudText Typo="Typo.h6">Welcome to GitHub Issue Manager!</MudText>
-                <MudText>This application helps you manage GitHub issues across multiple repositories. To get started:</MudText>
+    <div class="row">
+        <div class="col-12 col-md-8">
+            <div class="alert alert-info mb-4">
+                <h5>Welcome to GitHub Issue Manager!</h5>
+                <p>This application helps you manage GitHub issues across multiple repositories. To get started:</p>
                 <ol class="mt-2">
-                    <li>Configure your GitHub Personal Access Token in <MudLink Href="/settings">Settings</MudLink></li>
+                    <li>Configure your GitHub Personal Access Token in <a href="/settings" class="alert-link">Settings</a></li>
                     <li>Browse and add repositories to your watchlist</li>
                     <li>View and manage issues across all your watched repositories</li>
                 </ol>
-            </MudAlert>
+            </div>
             
-            <MudCard Class="mb-4">
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Features</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudGrid>
-                        <MudItem xs="12" md="6">
-                            <MudText Typo="Typo.h6" Class="d-flex align-center mb-2">
-                                <MudIcon Icon="@Icons.Custom.Brands.GitHub" Class="mr-2" />
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Features</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            <h6 class="d-flex align-items-center mb-2">
+                                <span class="me-2">🔧</span>
                                 Repository Management
-                            </MudText>
+                            </h6>
                             <ul>
                                 <li>Browse and search GitHub repositories</li>
                                 <li>Add repositories to your watchlist</li>
                                 <li>View repository metadata and statistics</li>
                             </ul>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudText Typo="Typo.h6" Class="d-flex align-center mb-2">
-                                <MudIcon Icon="@Icons.Material.Filled.BugReport" Class="mr-2" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <h6 class="d-flex align-items-center mb-2">
+                                <span class="me-2">🐛</span>
                                 Issue Management
-                            </MudText>
+                            </h6>
                             <ul>
                                 <li>View all issues across watched repositories</li>
                                 <li>Create new issues</li>
                                 <li>Update existing issues</li>
                                 <li>Filter and search issues</li>
                             </ul>
-                        </MudItem>
-                    </MudGrid>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudCard>
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Quick Start</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardActions Class="pa-4">
-                    <MudStack Style="width: 100%">
-                        <MudButton Variant="Variant.Filled" 
-                                   Color="Color.Primary" 
-                                   StartIcon="@Icons.Material.Filled.Settings"
-                                   Href="/settings"
-                                   FullWidth="true">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Start</h5>
+                </div>
+                <div class="card-footer">
+                    <div class="stack">
+                        <a href="/settings" class="btn btn-primary w-100">
+                            <span class="me-2">⚙️</span>
                             Configure GitHub Token
-                        </MudButton>
-                        <MudButton Variant="Variant.Outlined" 
-                                   Color="Color.Primary" 
-                                   StartIcon="@Icons.Material.Filled.FolderOpen"
-                                   Href="/repositories"
-                                   FullWidth="true">
+                        </a>
+                        <a href="/repositories" class="btn btn-outline-primary w-100">
+                            <span class="me-2">📂</span>
                             Browse Repositories
-                        </MudButton>
-                    </MudStack>
-                </MudCardActions>
-            </MudCard>
-        </MudItem>
-    </MudGrid>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 }
 else
 {
-    <MudGrid>
-        <MudItem xs="12" md="8">
-            <MudCard>
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Watched Repositories</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
+    <div class="row">
+        <div class="col-12 col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Watched Repositories</h5>
+                </div>
+                <div class="card-body">
                     @{
                         var watchedRepos = RepositoryService.GetWatchedRepositories().ToList();
                     }
                     @if (watchedRepos.Any())
                     {
-                        <MudGrid>
+                        <div class="row">
                             @foreach (var repo in watchedRepos.Take(6))
                             {
-                                <MudItem xs="12" md="6" Class="mb-3">
-                                    <MudCard Outlined="true">
-                                        <MudCardContent>
-                                            <MudText Typo="Typo.h6" Class="mb-2">
-                                                <MudLink Href="@repo.HtmlUrl" Target="_blank" Color="Color.Primary">
+                                <div class="col-12 col-md-6 mb-3">
+                                    <div class="card card-outlined">
+                                        <div class="card-body">
+                                            <h6 class="mb-2">
+                                                <a href="@repo.HtmlUrl" target="_blank" class="text-primary text-decoration-none">
                                                     @repo.FullName
-                                                </MudLink>
-                                            </MudText>
-                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">
+                                                </a>
+                                            </h6>
+                                            <p class="text-secondary mb-2">
                                                 @repo.Description
-                                            </MudText>
-                                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                                                <MudText Typo="Typo.caption" Color="Color.Info">
-                                                    <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small" Class="mr-1" />
+                                            </p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-info">
+                                                    <span class="me-1">⚠️</span>
                                                     @repo.OpenIssuesCount issues
-                                                </MudText>
-                                                <MudButton Size="Size.Small" 
-                                                          Variant="Variant.Outlined" 
-                                                          Color="Color.Primary"
-                                                          Href="@($"/issues/{repo.Owner.Login}/{repo.Name}")">
+                                                </small>
+                                                <a href="/issues/@repo.Owner.Login/@repo.Name" class="btn btn-outline-primary btn-sm">
                                                     View Issues
-                                                </MudButton>
-                                            </MudStack>
-                                        </MudCardContent>
-                                    </MudCard>
-                                </MudItem>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             }
-                        </MudGrid>
+                        </div>
                         
-                        <MudStack Row="true" Justify="Justify.Center" Class="mt-4">
-                            <MudButton Variant="Variant.Outlined" 
-                                      Color="Color.Primary" 
-                                      Href="/repositories">
+                        <div class="d-flex justify-content-center mt-4">
+                            <a href="/repositories" class="btn btn-outline-primary">
                                 View All Repositories
-                            </MudButton>
-                        </MudStack>
+                            </a>
+                        </div>
                     }
                     else
                     {
-                        <MudStack AlignItems="AlignItems.Center" Class="py-8">
-                            <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Size="Size.Large" Color="Color.Secondary" />
-                            <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
+                        <div class="empty-state">
+                            <div class="mb-3" style="font-size: 3rem;">📁</div>
+                            <p class="text-secondary mb-4">
                                 No repositories in your watchlist yet.
-                            </MudText>
-                            <MudButton Variant="Variant.Filled" 
-                                      Color="Color.Primary" 
-                                      StartIcon="@Icons.Material.Filled.Add"
-                                      Href="/repositories">
+                            </p>
+                            <a href="/repositories" class="btn btn-primary">
+                                <span class="me-2">➕</span>
                                 Add Repositories
-                            </MudButton>
-                        </MudStack>
+                            </a>
+                        </div>
                     }
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudCard Class="mb-4">
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Quick Actions</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardActions Class="pa-4">
-                    <MudStack Style="width: 100%">
-                        <MudButton Variant="Variant.Outlined" 
-                                   Color="Color.Primary" 
-                                   StartIcon="@Icons.Material.Filled.FolderOpen"
-                                   Href="/repositories"
-                                   FullWidth="true">
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-footer">
+                    <div class="stack">
+                        <a href="/repositories" class="btn btn-outline-primary w-100">
+                            <span class="me-2">📂</span>
                             Browse Repositories
-                        </MudButton>
-                        <MudButton Variant="Variant.Outlined" 
-                                   Color="Color.Info" 
-                                   StartIcon="@Icons.Material.Filled.ManageAccounts"
-                                   Href="/management"
-                                   FullWidth="true">
+                        </a>
+                        <a href="/management" class="btn btn-outline-info w-100">
+                            <span class="me-2">👤</span>
                             Management
-                        </MudButton>
-                        <MudButton Variant="Variant.Outlined" 
-                                   Color="Color.Secondary" 
-                                   StartIcon="@Icons.Material.Filled.Settings"
-                                   Href="/settings"
-                                   FullWidth="true">
+                        </a>
+                        <a href="/settings" class="btn btn-outline-secondary w-100">
+                            <span class="me-2">⚙️</span>
                             Settings
-                        </MudButton>
-                    </MudStack>
-                </MudCardActions>
-            </MudCard>
+                        </a>
+                    </div>
+                </div>
+            </div>
             
-            <MudCard>
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Statistics</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudGrid>
-                        <MudItem xs="6" Class="text-center">
-                            <MudText Typo="Typo.h4" Color="Color.Primary">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 text-center">
+                            <h2 class="text-primary">
                                 @RepositoryService.GetWatchedRepositories().Count()
-                            </MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            </h2>
+                            <small class="text-secondary">
                                 Watched Repos
-                            </MudText>
-                        </MudItem>
-                        <MudItem xs="6" Class="text-center">
-                            <MudText Typo="Typo.h4" Color="Color.Warning">
+                            </small>
+                        </div>
+                        <div class="col-6 text-center">
+                            <h2 class="text-warning">
                                 @RepositoryService.GetWatchedRepositories().Sum(r => r.OpenIssuesCount)
-                            </MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            </h2>
+                            <small class="text-secondary">
                                 Open Issues
-                            </MudText>
-                        </MudItem>
-                    </MudGrid>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-    </MudGrid>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 }
