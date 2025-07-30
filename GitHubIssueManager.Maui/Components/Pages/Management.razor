@@ -46,22 +46,22 @@
 }
 else
 {
-    <!-- Tab Navigation -->
+    <!-- Blazor-native Tab Navigation -->
     <ul class="nav nav-tabs mb-4" id="managementTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="repository-tab" data-bs-toggle="tab" data-bs-target="#repository-pane" type="button" role="tab" aria-controls="repository-pane" aria-selected="true">
+            <button class="nav-link @(activeTab == "repository" ? "active" : null)" type="button" @onclick='() => SetActiveTab("repository")'>
                 <i class="bi bi-folder me-2"></i>
                 Repository Management
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="statistics-tab" data-bs-toggle="tab" data-bs-target="#statistics-pane" type="button" role="tab" aria-controls="statistics-pane" aria-selected="false">
+            <button class="nav-link @(activeTab == "statistics" ? "active" : null)" type="button" @onclick='() => SetActiveTab("statistics")'>
                 <i class="bi bi-graph-up me-2"></i>
                 Statistics & Insights
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="system-tab" data-bs-toggle="tab" data-bs-target="#system-pane" type="button" role="tab" aria-controls="system-pane" aria-selected="false">
+            <button class="nav-link @(activeTab == "system" ? "active" : null)" type="button" @onclick='() => SetActiveTab("system")'>
                 <i class="bi bi-shield-check me-2"></i>
                 System Status
             </button>
@@ -71,409 +71,416 @@ else
     <!-- Tab Content -->
     <div class="tab-content" id="managementTabsContent">
         <!-- Repository Management Tab -->
-        <div class="tab-pane fade show active" id="repository-pane" role="tabpanel" aria-labelledby="repository-tab">
-            <div class="stack" style="gap: 2rem;">
-                <!-- Watched Repositories Section -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-eye text-primary me-2"></i>
-                                <h5 class="mb-0">Watched Repositories</h5>
-                                <span class="badge bg-info ms-2">@watchedRepos.Count()</span>
+        @if (activeTab == "repository")
+        {
+            <div class="tab-pane fade show active" id="repository-pane" role="tabpanel" aria-labelledby="repository-tab">
+                <div class="stack" style="gap: 2rem;">
+                    <!-- Watched Repositories Section -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-eye text-primary me-2"></i>
+                                    <h5 class="mb-0">Watched Repositories</h5>
+                                    <span class="badge bg-info ms-2">@watchedRepos.Count()</span>
+                                </div>
+                                <button type="button"
+                                        class="btn btn-outline-primary btn-sm"
+                                        @onclick="RefreshRepositories"
+                                        disabled="@isRefreshing">
+                                    @if (isRefreshing)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-arrow-clockwise me-1"></i>
+                                    }
+                                    Refresh
+                                </button>
                             </div>
-                            <button type="button"
-                                    class="btn btn-outline-primary btn-sm"
-                                    @onclick="RefreshRepositories"
-                                    disabled="@isRefreshing">
-                                @if (isRefreshing)
-                                {
-                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                                }
-                                else
-                                {
-                                    <i class="bi bi-arrow-clockwise me-1"></i>
-                                }
-                                Refresh
-                            </button>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        @if (watchedRepos.Any())
-                        {
-                            <div class="stack" style="gap: 1rem;">
-                                @foreach (var repo in watchedRepos)
-                                {
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <div class="flex-grow-1">
-                                                    <h6 class="card-title mb-2">
-                                                        <a href="@repo.HtmlUrl" target="_blank" class="text-primary text-decoration-none">
-                                                            @repo.FullName
-                                                        </a>
-                                                    </h6>
-                                                    <p class="text-secondary mb-2">@repo.Description</p>
-                                                    <div class="d-flex gap-3 align-items-center">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-star text-warning me-1"></i>
-                                                            <small>@repo.StargazersCount</small>
-                                                        </div>
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-bug text-danger me-1"></i>
-                                                            <small>@repo.OpenIssuesCount issues</small>
-                                                        </div>
-                                                        @if (!string.IsNullOrEmpty(repo.Language))
-                                                        {
+                        <div class="card-body">
+                            @if (watchedRepos.Any())
+                            {
+                                <div class="stack" style="gap: 1rem;">
+                                    @foreach (var repo in watchedRepos)
+                                    {
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="card-title mb-2">
+                                                            <a href="@repo.HtmlUrl" target="_blank" class="text-primary text-decoration-none">
+                                                                @repo.FullName
+                                                            </a>
+                                                        </h6>
+                                                        <p class="text-secondary mb-2">@repo.Description</p>
+                                                        <div class="d-flex gap-3 align-items-center">
                                                             <div class="d-flex align-items-center">
-                                                                <i class="bi bi-code text-secondary me-1"></i>
-                                                                <small>@repo.Language</small>
+                                                                <i class="bi bi-star text-warning me-1"></i>
+                                                                <small>@repo.StargazersCount</small>
                                                             </div>
-                                                        }
+                                                            <div class="d-flex align-items-center">
+                                                                <i class="bi bi-bug text-danger me-1"></i>
+                                                                <small>@repo.OpenIssuesCount issues</small>
+                                                            </div>
+                                                            @if (!string.IsNullOrEmpty(repo.Language))
+                                                            {
+                                                                <div class="d-flex align-items-center">
+                                                                    <i class="bi bi-code text-secondary me-1"></i>
+                                                                    <small>@repo.Language</small>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-flex gap-1">
+                                                        <a href="/issues/@repo.Owner.Login/@repo.Name" class="btn btn-outline-primary btn-sm">
+                                                            <i class="bi bi-bug me-1"></i>
+                                                            Issues
+                                                        </a>
+                                                        <button type="button"
+                                                                class="btn btn-outline-danger btn-sm"
+                                                                @onclick="() => RemoveRepository(repo)">
+                                                            <i class="bi bi-dash-circle me-1"></i>
+                                                            Remove
+                                                        </button>
                                                     </div>
                                                 </div>
-                                                <div class="d-flex gap-1">
-                                                    <a href="/issues/@repo.Owner.Login/@repo.Name" class="btn btn-outline-primary btn-sm">
-                                                        <i class="bi bi-bug me-1"></i>
-                                                        Issues
-                                                    </a>
-                                                    <button type="button"
-                                                            class="btn btn-outline-danger btn-sm"
-                                                            @onclick="() => RemoveRepository(repo)">
-                                                        <i class="bi bi-dash-circle me-1"></i>
-                                                        Remove
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="text-center py-5">
-                                <div class="mb-3" style="font-size: 3rem;">📁</div>
-                                <p class="text-secondary mb-4">No repositories in your watchlist yet.</p>
-                                <a href="/repositories" class="btn btn-primary">
-                                    <i class="bi bi-plus me-1"></i>
-                                    Add Repositories
-                                </a>
-                            </div>
-                        }
-                    </div>
-                </div>
-
-                <!-- Bulk Operations Section -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-sliders text-secondary me-2"></i>
-                            <h5 class="mb-0">Bulk Operations</h5>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-12 col-md-4 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h6 class="card-title">Repository Actions</h6>
-                                        <div class="d-grid gap-2">
-                                            <button type="button"
-                                                    class="btn btn-outline-warning btn-sm"
-                                                    @onclick="() => showClearAllDialog = true">
-                                                <i class="bi bi-trash me-1"></i>
-                                                Clear All Watchlist
-                                            </button>
-                                            <button type="button"
-                                                    class="btn btn-outline-info btn-sm"
-                                                    @onclick="ExportWatchlist">
-                                                <i class="bi bi-download me-1"></i>
-                                                Export Watchlist
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-4 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h6 class="card-title">Copy Git URLs</h6>
-                                        <div class="d-grid gap-2">
-                                            <button type="button"
-                                                    class="btn btn-outline-success btn-sm"
-                                                    @onclick="CopyAllGitUrls"
-                                                    disabled="@isCopyingAllUrls">
-                                                @if (isCopyingAllUrls)
-                                                {
-                                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                                                }
-                                                else
-                                                {
-                                                    <i class="bi bi-clipboard me-1"></i>
-                                                }
-                                                Copy All Git URLs
-                                            </button>
-                                            <button type="button"
-                                                    class="btn btn-outline-primary btn-sm"
-                                                    @onclick="CopyWatchedGitUrls"
-                                                    disabled="@isCopyingWatchedUrls">
-                                                @if (isCopyingWatchedUrls)
-                                                {
-                                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                                                }
-                                                else
-                                                {
-                                                    <i class="bi bi-eye me-1"></i>
-                                                }
-                                                Copy Watched Git URLs
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-4 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h6 class="card-title">Data Management</h6>
-                                        <div class="d-grid gap-2">
-                                            <button type="button"
-                                                    class="btn btn-outline-primary btn-sm"
-                                                    @onclick="RefreshAllData"
-                                                    disabled="@isRefreshingAll">
-                                                @if (isRefreshingAll)
-                                                {
-                                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                                                }
-                                                else
-                                                {
-                                                    <i class="bi bi-arrow-clockwise me-1"></i>
-                                                }
-                                                Refresh All Data
-                                            </button>
-                                            <a href="/settings" class="btn btn-outline-secondary btn-sm">
-                                                <i class="bi bi-gear me-1"></i>
-                                                System Settings
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Statistics & Insights Tab -->
-        <div class="tab-pane fade" id="statistics-pane" role="tabpanel" aria-labelledby="statistics-tab">
-            <div class="stack" style="gap: 2rem;">
-                <!-- Overview Statistics -->
-                <div class="row">
-                    <div class="col-12 col-sm-6 col-md-3 mb-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h2 class="text-primary">@watchedRepos.Count()</h2>
-                                <p class="text-secondary mb-0">Watched Repositories</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-sm-6 col-md-3 mb-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h2 class="text-warning">@totalOpenIssues</h2>
-                                <p class="text-secondary mb-0">Total Open Issues</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-sm-6 col-md-3 mb-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h2 class="text-info">@totalStars</h2>
-                                <p class="text-secondary mb-0">Total Stars</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-sm-6 col-md-3 mb-3">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h2 class="text-success">@uniqueLanguages.Count</h2>
-                                <p class="text-secondary mb-0">Languages Used</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Repository Insights -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Repository Insights</h5>
-                    </div>
-                    <div class="card-body">
-                        @if (watchedRepos.Any())
-                        {
-                            <div class="row">
-                                <div class="col-12 col-md-6 mb-4">
-                                    <h6 class="mb-3">Most Active Repositories (by Issues)</h6>
-                                    @foreach (var repo in watchedRepos.OrderByDescending(r => r.OpenIssuesCount).Take(5))
-                                    {
-                                        <div class="card mb-2">
-                                            <div class="card-body py-2">
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <span class="small">@repo.Name</span>
-                                                    <span class="badge bg-warning">@repo.OpenIssuesCount issues</span>
-                                                </div>
                                             </div>
                                         </div>
                                     }
                                 </div>
-                                <div class="col-12 col-md-6 mb-4">
-                                    <h6 class="mb-3">Most Popular Repositories (by Stars)</h6>
-                                    @foreach (var repo in watchedRepos.OrderByDescending(r => r.StargazersCount).Take(5))
-                                    {
-                                        <div class="card mb-2">
-                                            <div class="card-body py-2">
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <span class="small">@repo.Name</span>
-                                                    <span class="badge bg-info">⭐ @repo.StargazersCount</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-
-                            <!-- Language Distribution -->
-                            @if (uniqueLanguages.Any())
-                            {
-                                <hr />
-                                <h6 class="mb-3">Programming Languages</h6>
-                                <div class="d-flex flex-wrap gap-1">
-                                    @foreach (var language in uniqueLanguages.Take(10))
-                                    {
-                                        <span class="badge bg-primary">@language</span>
-                                    }
-                                </div>
-                            }
-                        }
-                        else
-                        {
-                            <div class="text-center py-4">
-                                <p class="text-secondary">No data available. Add repositories to your watchlist to see insights.</p>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- System Status Tab -->
-        <div class="tab-pane fade" id="system-pane" role="tabpanel" aria-labelledby="system-tab">
-            <div class="stack" style="gap: 2rem;">
-                <!-- Authentication Status -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Authentication Status</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            @if (AuthService.IsAuthenticated)
-                            {
-                                <i class="bi bi-check-circle text-success me-2"></i>
-                                <span>GitHub Token Configured</span>
                             }
                             else
                             {
-                                <i class="bi bi-x-circle text-danger me-2"></i>
-                                <span>GitHub Token Not Configured</span>
+                                <div class="text-center py-5">
+                                    <div class="mb-3" style="font-size: 3rem;">📁</div>
+                                    <p class="text-secondary mb-4">No repositories in your watchlist yet.</p>
+                                    <a href="/repositories" class="btn btn-primary">
+                                        <i class="bi bi-plus me-1"></i>
+                                        Add Repositories
+                                    </a>
+                                </div>
                             }
                         </div>
-                        @if (!AuthService.IsAuthenticated)
-                        {
-                            <a href="/settings" class="btn btn-primary">
-                                <i class="bi bi-gear me-1"></i>
-                                Configure Token
-                            </a>
-                        }
+                    </div>
+
+                    <!-- Bulk Operations Section -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-sliders text-secondary me-2"></i>
+                                <h5 class="mb-0">Bulk Operations</h5>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12 col-md-4 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Repository Actions</h6>
+                                            <div class="d-grid gap-2">
+                                                <button type="button"
+                                                        class="btn btn-outline-warning btn-sm"
+                                                        @onclick="() => showClearAllDialog = true">
+                                                    <i class="bi bi-trash me-1"></i>
+                                                    Clear All Watchlist
+                                                </button>
+                                                <button type="button"
+                                                        class="btn btn-outline-info btn-sm"
+                                                        @onclick="ExportWatchlist">
+                                                    <i class="bi bi-download me-1"></i>
+                                                    Export Watchlist
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Copy Git URLs</h6>
+                                            <div class="d-grid gap-2">
+                                                <button type="button"
+                                                        class="btn btn-outline-success btn-sm"
+                                                        @onclick="CopyAllGitUrls"
+                                                        disabled="@isCopyingAllUrls">
+                                                    @if (isCopyingAllUrls)
+                                                    {
+                                                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="bi bi-clipboard me-1"></i>
+                                                    }
+                                                    Copy All Git URLs
+                                                </button>
+                                                <button type="button"
+                                                        class="btn btn-outline-primary btn-sm"
+                                                        @onclick="CopyWatchedGitUrls"
+                                                        disabled="@isCopyingWatchedUrls">
+                                                    @if (isCopyingWatchedUrls)
+                                                    {
+                                                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="bi bi-eye me-1"></i>
+                                                    }
+                                                    Copy Watched Git URLs
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Data Management</h6>
+                                            <div class="d-grid gap-2">
+                                                <button type="button"
+                                                        class="btn btn-outline-primary btn-sm"
+                                                        @onclick="RefreshAllData"
+                                                        disabled="@isRefreshingAll">
+                                                    @if (isRefreshingAll)
+                                                    {
+                                                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="bi bi-arrow-clockwise me-1"></i>
+                                                    }
+                                                    Refresh All Data
+                                                </button>
+                                                <a href="/settings" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="bi bi-gear me-1"></i>
+                                                    System Settings
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
+        }
+        <!-- Statistics & Insights Tab -->
+        @if (activeTab == "statistics")
+        {
+            <div class="tab-pane fade show active" id="statistics-pane" role="tabpanel" aria-labelledby="statistics-tab">
+                <div class="stack" style="gap: 2rem;">
+                    <!-- Overview Statistics -->
+                    <div class="row">
+                        <div class="col-12 col-sm-6 col-md-3 mb-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h2 class="text-primary">@watchedRepos.Count()</h2>
+                                    <p class="text-secondary mb-0">Watched Repositories</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-3 mb-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h2 class="text-warning">@totalOpenIssues</h2>
+                                    <p class="text-secondary mb-0">Total Open Issues</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-3 mb-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h2 class="text-info">@totalStars</h2>
+                                    <p class="text-secondary mb-0">Total Stars</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-3 mb-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h2 class="text-success">@uniqueLanguages.Count</h2>
+                                    <p class="text-secondary mb-0">Languages Used</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                <!-- GitHub API Status -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">GitHub API Connectivity</h5>
-                            <button type="button"
-                                    class="btn btn-outline-primary btn-sm"
-                                    @onclick="CheckApiStatus"
-                                    disabled="@isCheckingApi">
-                                @if (isCheckingApi)
+                    <!-- Repository Insights -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Repository Insights</h5>
+                        </div>
+                        <div class="card-body">
+                            @if (watchedRepos.Any())
+                            {
+                                <div class="row">
+                                    <div class="col-12 col-md-6 mb-4">
+                                        <h6 class="mb-3">Most Active Repositories (by Issues)</h6>
+                                        @foreach (var repo in watchedRepos.OrderByDescending(r => r.OpenIssuesCount).Take(5))
+                                        {
+                                            <div class="card mb-2">
+                                                <div class="card-body py-2">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <span class="small">@repo.Name</span>
+                                                        <span class="badge bg-warning">@repo.OpenIssuesCount issues</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="col-12 col-md-6 mb-4">
+                                        <h6 class="mb-3">Most Popular Repositories (by Stars)</h6>
+                                        @foreach (var repo in watchedRepos.OrderByDescending(r => r.StargazersCount).Take(5))
+                                        {
+                                            <div class="card mb-2">
+                                                <div class="card-body py-2">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <span class="small">@repo.Name</span>
+                                                        <span class="badge bg-info">⭐ @repo.StargazersCount</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- Language Distribution -->
+                                @if (uniqueLanguages.Any())
                                 {
-                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                    <hr />
+                                    <h6 class="mb-3">Programming Languages</h6>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach (var language in uniqueLanguages.Take(10))
+                                        {
+                                            <span class="badge bg-primary">@language</span>
+                                        }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-center py-4">
+                                    <p class="text-secondary">No data available. Add repositories to your watchlist to see insights.</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        <!-- System Status Tab -->
+        @if (activeTab == "system")
+        {
+            <div class="tab-pane fade show active" id="system-pane" role="tabpanel" aria-labelledby="system-tab">
+                <div class="stack" style="gap: 2rem;">
+                    <!-- Authentication Status -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Authentication Status</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                @if (AuthService.IsAuthenticated)
+                                {
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <span>GitHub Token Configured</span>
                                 }
                                 else
                                 {
-                                    <i class="bi bi-arrow-clockwise me-1"></i>
+                                    <i class="bi bi-x-circle text-danger me-2"></i>
+                                    <span>GitHub Token Not Configured</span>
                                 }
-                                Test Connection
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            @if (apiStatus == null)
-                            {
-                                <i class="bi bi-question-circle text-info me-2"></i>
-                                <span>API status unknown - click "Test Connection" to check</span>
-                            }
-                            else if (apiStatus == true)
-                            {
-                                <i class="bi bi-check-circle text-success me-2"></i>
-                                <span>GitHub API is accessible</span>
-                            }
-                            else
-                            {
-                                <i class="bi bi-x-circle text-danger me-2"></i>
-                                <span>GitHub API is not accessible</span>
-                            }
-                        </div>
-                        @if (!string.IsNullOrEmpty(apiErrorMessage))
-                        {
-                            <div class="alert alert-danger">
-                                <small>@apiErrorMessage</small>
                             </div>
-                        }
+                            @if (!AuthService.IsAuthenticated)
+                            {
+                                <a href="/settings" class="btn btn-primary">
+                                    <i class="bi bi-gear me-1"></i>
+                                    Configure Token
+                                </a>
+                            }
+                        </div>
                     </div>
-                </div>
 
-                <!-- Application Information -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Application Information</h5>
+                    <!-- GitHub API Status -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">GitHub API Connectivity</h5>
+                                <button type="button"
+                                        class="btn btn-outline-primary btn-sm"
+                                        @onclick="CheckApiStatus"
+                                        disabled="@isCheckingApi">
+                                    @if (isCheckingApi)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-arrow-clockwise me-1"></i>
+                                    }
+                                    Test Connection
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                @if (apiStatus == null)
+                                {
+                                    <i class="bi bi-question-circle text-info me-2"></i>
+                                    <span>API status unknown - click "Test Connection" to check</span>
+                                }
+                                else if (apiStatus == true)
+                                {
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <span>GitHub API is accessible</span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-x-circle text-danger me-2"></i>
+                                    <span>GitHub API is not accessible</span>
+                                }
+                            </div>
+                            @if (!string.IsNullOrEmpty(apiErrorMessage))
+                            {
+                                <div class="alert alert-danger">
+                                    <small>@apiErrorMessage</small>
+                                </div>
+                            }
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-12 col-md-6 mb-3">
-                                <small class="text-secondary">Application Version</small>
-                                <div>GitHub Issue Manager v1.0</div>
-                            </div>
-                            <div class="col-12 col-md-6 mb-3">
-                                <small class="text-secondary">Framework</small>
-                                <div>.NET 8 Blazor Server</div>
-                            </div>
-                            <div class="col-12 col-md-6 mb-3">
-                                <small class="text-secondary">Last Updated</small>
-                                <div>@DateTime.UtcNow.ToString("MMM dd, yyyy")</div>
-                            </div>
-                            <div class="col-12 col-md-6 mb-3">
-                                <small class="text-secondary">UI Framework</small>
-                                <div>Bootstrap 5</div>
+
+                    <!-- Application Information -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Application Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12 col-md-6 mb-3">
+                                    <small class="text-secondary">Application Version</small>
+                                    <div>GitHub Issue Manager v1.0</div>
+                                </div>
+                                <div class="col-12 col-md-6 mb-3">
+                                    <small class="text-secondary">Framework</small>
+                                    <div>.NET 8 Blazor Server</div>
+                                </div>
+                                <div class="col-12 col-md-6 mb-3">
+                                    <small class="text-secondary">Last Updated</small>
+                                    <div>@DateTime.UtcNow.ToString("MMM dd, yyyy")</div>
+                                </div>
+                                <div class="col-12 col-md-6 mb-3">
+                                    <small class="text-secondary">UI Framework</small>
+                                    <div>Bootstrap 5</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        }
     </div>
 }
 
@@ -511,6 +518,12 @@ else
 }
 
 @code {
+    private string activeTab = "repository";
+    private void SetActiveTab(string tab)
+    {
+        activeTab = tab;
+    }
+
     private IEnumerable<GitHubRepository> watchedRepos = new List<GitHubRepository>();
     private bool isRefreshing = false;
     private bool isRefreshingAll = false;
