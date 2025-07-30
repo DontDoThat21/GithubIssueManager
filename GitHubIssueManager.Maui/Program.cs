@@ -3,7 +3,6 @@ using GitHubIssueManager.Maui.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.Tokens;
-using MudBlazor.Services;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,9 +10,6 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-
-// Add MudBlazor services
-builder.Services.AddMudServices();
 
 // Add controllers for API endpoints
 builder.Services.AddControllers();
