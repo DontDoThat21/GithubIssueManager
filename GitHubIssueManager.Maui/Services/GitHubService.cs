@@ -12,6 +12,15 @@ public class GitHubService
     private readonly ILogger<GitHubService> _logger;
     private string? _token;
 
+    // Known Copilot agent logins to consider for assignment availability
+    private static readonly string[] CopilotAgentLogins = new[]
+    {
+        "github-copilot",
+        "swe-copilot-agent",
+        "copilot",
+        "copilot-agent"
+    };
+
     public GitHubService(ILogger<GitHubService> logger)
     {
         _logger = logger;
@@ -130,13 +139,58 @@ public class GitHubService
     {
         try
         {
-            var issueRequest = new NewIssue(title) { Body = body };
-            var issue = await _client.Issue.Create(owner, repo, issueRequest);
-            return MapToGitHubIssue(issue);
+            if (string.IsNullOrWhiteSpace(_token))
+                throw new UnauthorizedAccessException("GitHub authentication is required. Please configure your Personal Access Token.");
+
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("GitHubIssueManager");
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);
+            httpClient.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+            httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
+
+            var url = $"https://api.github.com/repos/{owner}/{repo}/issues";
+            var payload = new { title, body };
+            using var content = new StringContent(JsonSerializer.Serialize(payload), System.Text.Encoding.UTF8, "application/json");
+
+            var response = await httpClient.PostAsync(url, content);
+            var json = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("GitHub API error creating issue in {Owner}/{Repo}: {StatusCode} {Message}", owner, repo, response.StatusCode, json);
+                throw response.StatusCode switch
+                {
+                    System.Net.HttpStatusCode.Unauthorized => new UnauthorizedAccessException("GitHub authentication failed. Please check your Personal Access Token and ensure it has the required 'repo' permissions."),
+                    System.Net.HttpStatusCode.Forbidden => new UnauthorizedAccessException("Access forbidden. Your GitHub token may not have permission to create issues in this repository, or you may have exceeded the API rate limit."),
+                    System.Net.HttpStatusCode.NotFound => new ArgumentException($"Repository '{owner}/{repo}' not found or you do not have access."),
+                    System.Net.HttpStatusCode.UnprocessableEntity => new ArgumentException($"Validation failed creating issue: {json}"),
+                    _ => new InvalidOperationException($"GitHub API error: {json}")
+                };
+            }
+
+            var issue = JsonSerializer.Deserialize<GitHubIssue>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+            if (issue == null)
+            {
+                throw new InvalidOperationException("Failed to parse created issue from GitHub API response.");
+            }
+            return issue;
+        }
+        catch (HttpRequestException httpEx)
+        {
+            _logger.LogError(httpEx, "Network error creating issue in {Owner}/{Repo}", owner, repo);
+            throw new InvalidOperationException("Unable to connect to GitHub API. Please check your internet connection and try again.");
+        }
+        catch (TaskCanceledException tcEx)
+        {
+            _logger.LogError(tcEx, "Timeout error creating issue in {Owner}/{Repo}", owner, repo);
+            throw new TimeoutException("Request to GitHub API timed out. Please try again later.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating issue in {Owner}/{Repo}", owner, repo);
+            _logger.LogError(ex, "Unexpected error creating issue in {Owner}/{Repo}", owner, repo);
             throw;
         }
     }
@@ -275,57 +329,120 @@ public class GitHubService
 
     /// <summary>
     /// Assigns the Copilot agent (copilot-swe-agent) to a GitHub issue using the REST API.
+    /// TODO: One day reevaulate if Microsoft has enabled this in Octokit or if we can use a different approach.
+    /// 
     /// </summary>
     /// <param name="owner">Repository owner</param>
     /// <param name="repo">Repository name</param>
     /// <param name="issueNumber">Issue number</param>
     /// <returns>The updated GitHubIssue if successful</returns>
-    public async Task<GitHubIssue> AssignIssueToCopilotAsync(string owner, string repo, long issueNumber)
-    {
-        if (string.IsNullOrWhiteSpace(_token))
-            throw new UnauthorizedAccessException("GitHub authentication is required. Please configure your Personal Access Token.");
-        if (issueNumber <= 0)
-            throw new ArgumentException("Issue number must be greater than zero.", nameof(issueNumber));
+    //public async Task<GitHubIssue> AssignIssueToCopilotAsync(string owner, string repo, long issueNumber)
+    //{
+    //    // Cannot assign Copilot using Octokit directly, as it does not support assigning users to issues.
+    //    // Good
+    //    // approach is to use the GitHub REST API directly for this specific operation for a user.
 
-        using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("GitHubIssueManager");
-        httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);
-
-        var url = $"https://api.github.com/repos/{owner}/{repo}/issues/{issueNumber}/assignees";
-        var payload = new { assignees = new[] { "copilot-swe-agent" } };
-        var content = new StringContent(JsonSerializer.Serialize(payload), System.Text.Encoding.UTF8, "application/json");
-        var response = await httpClient.PostAsync(url, content);
-        var json = await response.Content.ReadAsStringAsync();
-        if (!response.IsSuccessStatusCode)
-        {
-            _logger.LogError("GitHub API error assigning Copilot to issue {Owner}/{Repo} #{IssueNumber}: {StatusCode} {Message}", owner, repo, issueNumber, response.StatusCode, json);
-            throw response.StatusCode switch
-            {
-                System.Net.HttpStatusCode.Unauthorized => new UnauthorizedAccessException("GitHub authentication failed. Please check your Personal Access Token and ensure it has the required 'repo' permissions."),
-                System.Net.HttpStatusCode.Forbidden => new UnauthorizedAccessException("Access forbidden. Your GitHub token may not have permission to assign Copilot, or you may have exceeded the API rate limit."),
-                System.Net.HttpStatusCode.NotFound => new ArgumentException($"Repository '{owner}/{repo}' or issue #{issueNumber} not found. Please verify the repository and issue number."),
-                _ => new InvalidOperationException($"GitHub API error: {json}")
-            };
-        }
-        var issue = JsonSerializer.Deserialize<GitHubIssue>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-        if (issue == null)
-            throw new InvalidOperationException("Failed to parse updated issue from GitHub API response.");
-        return issue;
-    }
+    //    //if (string.IsNullOrWhiteSpace(_token))
+    //    //    throw new UnauthorizedAccessException("GitHub authentication is required. Please configure your Personal Access Token.");
+    //    //if (issueNumber <= 0)
+    //    //    throw new ArgumentException("Issue number must be greater than zero.", nameof(issueNumber));
+    //    //
+    //    //using var httpClient = new HttpClient();
+    //    //httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("GitHubIssueManager");
+    //    //httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);
+    //    //
+    //    //var url = $"https://api.github.com/repos/{owner}/{repo}/issues/{issueNumber}/assignees";
+    //    //var payload = new { assignees = new[] { "copilot-swe-agent" } };
+    //    //var content = new StringContent(JsonSerializer.Serialize(payload), System.Text.Encoding.UTF8, "application/json");
+    //    //var response = await httpClient.PostAsync(url, content);
+    //    //var json = await response.Content.ReadAsStringAsync();
+    //    //if (!response.IsSuccessStatusCode)
+    //    //{
+    //    //    _logger.LogError("GitHub API error assigning Copilot to issue {Owner}/{Repo} #{IssueNumber}: {StatusCode} {Message}", owner, repo, issueNumber, response.StatusCode, json);
+    //    //    throw response.StatusCode switch
+    //    //    {
+    //    //        System.Net.HttpStatusCode.Unauthorized => new UnauthorizedAccessException("GitHub authentication failed. Please check your Personal Access Token and ensure it has the required 'repo' permissions."),
+    //    //        System.Net.HttpStatusCode.Forbidden => new UnauthorizedAccessException("Access forbidden. Your GitHub token may not have permission to assign Copilot, or you may have exceeded the API rate limit."),
+    //    //        System.Net.HttpStatusCode.NotFound => new ArgumentException($"Repository '{owner}/{repo}' or issue #{issueNumber} not found. Please verify the repository and issue number."),
+    //    //        _ => new InvalidOperationException($"GitHub API error: {json}")
+    //    //    };
+    //    //}
+    //    //var issue = JsonSerializer.Deserialize<GitHubIssue>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+    //    //if (issue == null)
+    //    //    throw new InvalidOperationException("Failed to parse updated issue from GitHub API response.");
+    //    //return issue;
+    //}
 
     public async Task<IEnumerable<GitHubUser>> GetAvailableAssigneesAsync(string owner, string repo)
     {
         try
         {
             var assignees = await _client.Issue.Assignee.GetAllForRepository(owner, repo);
-            return assignees.Select(a => new GitHubUser
+            var mapped = assignees.Select(a => new GitHubUser
             {
                 Id = a.Id,
                 Login = a.Login,
                 AvatarUrl = a.AvatarUrl ?? string.Empty,
                 HtmlUrl = a.HtmlUrl ?? string.Empty,
                 Type = a.Type.ToString()
-            });
+            }).ToList();
+
+            // Ensure Copilot agent appears if assignable for this repo
+            if (!string.IsNullOrWhiteSpace(_token))
+            {
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("GitHubIssueManager");
+                httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);
+                httpClient.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+                httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
+
+                foreach (var login in CopilotAgentLogins)
+                {
+                    if (mapped.Any(a => string.Equals(a.Login, login, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+
+                    try
+                    {
+                        var checkUrl = $"https://api.github.com/repos/{owner}/{repo}/assignees/{login}";
+                        using var checkResp = await httpClient.GetAsync(checkUrl);
+                        // Docs: returns 204 if the assignee is a valid assignee for the repository
+                        if ((int)checkResp.StatusCode == 204)
+                        {
+                            // Fetch user details to populate avatar/id
+                            try
+                            {
+                                var user = await _client.User.Get(login);
+                                mapped.Add(new GitHubUser
+                                {
+                                    Id = user.Id,
+                                    Login = user.Login,
+                                    AvatarUrl = user.AvatarUrl ?? string.Empty,
+                                    HtmlUrl = user.HtmlUrl ?? string.Empty,
+                                    Type = user.Type.ToString()
+                                });
+                            }
+                            catch
+                            {
+                                // Fallback minimal entry if user lookup fails
+                                mapped.Add(new GitHubUser
+                                {
+                                    Id = 0,
+                                    Login = login,
+                                    AvatarUrl = string.Empty,
+                                    HtmlUrl = $"https://github.com/{login}",
+                                    Type = "User"
+                                });
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogDebug(ex, "Copilot assignee check failed for {Login} in {Owner}/{Repo}", login, owner, repo);
+                    }
+                }
+            }
+
+            return mapped;
         }
         catch (Exception ex)
         {
