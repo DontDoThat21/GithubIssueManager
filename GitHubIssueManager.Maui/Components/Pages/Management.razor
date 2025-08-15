@@ -10,7 +10,7 @@
 <PageTitle>Management - GitHub Issue Manager</PageTitle>
 
 <!-- Management Header Card -->
-<div class="card mb-4" style="background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%); color: white;">
+<div class="card mb-4" style="background: linear-gradient(135deg, #1e1e1e 0%, #5d5d7d 100%); color: white;">
     <div class="card-body p-4">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-2" style="background: transparent;">
@@ -76,7 +76,7 @@ else
             <div class="tab-pane fade show active" id="repository-pane" role="tabpanel" aria-labelledby="repository-tab">
                 <div class="stack" style="gap: 2rem;">
                     <!-- Watched Repositories Section -->
-                    <div class="card">
+                    <div class="card border border-primary">
                         <div class="card-header">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center">
@@ -167,7 +167,7 @@ else
                     </div>
 
                     <!-- Bulk Operations Section -->
-                    <div class="card">
+                    <div class="card border border-secondary">
                         <div class="card-header">
                             <div class="d-flex align-items-center">
                                 <i class="bi bi-sliders text-secondary me-2"></i>
@@ -275,7 +275,7 @@ else
                     <!-- Overview Statistics -->
                     <div class="row">
                         <div class="col-12 col-sm-6 col-md-3 mb-3">
-                            <div class="card text-center">
+                            <div class="card text-center border-primary">
                                 <div class="card-body">
                                     <h2 class="text-primary">@watchedRepos.Count()</h2>
                                     <p class="text-secondary mb-0">Watched Repositories</p>
@@ -283,7 +283,7 @@ else
                             </div>
                         </div>
                         <div class="col-12 col-sm-6 col-md-3 mb-3">
-                            <div class="card text-center">
+                            <div class="card text-center border-secondary">
                                 <div class="card-body">
                                     <h2 class="text-warning">@totalOpenIssues</h2>
                                     <p class="text-secondary mb-0">Total Open Issues</p>
@@ -291,7 +291,7 @@ else
                             </div>
                         </div>
                         <div class="col-12 col-sm-6 col-md-3 mb-3">
-                            <div class="card text-center">
+                            <div class="card text-center border-primary">
                                 <div class="card-body">
                                     <h2 class="text-info">@totalStars</h2>
                                     <p class="text-secondary mb-0">Total Stars</p>
@@ -299,7 +299,7 @@ else
                             </div>
                         </div>
                         <div class="col-12 col-sm-6 col-md-3 mb-3">
-                            <div class="card text-center">
+                            <div class="card text-center border-secondary">
                                 <div class="card-body">
                                     <h2 class="text-success">@uniqueLanguages.Count</h2>
                                     <p class="text-secondary mb-0">Languages Used</p>
@@ -309,7 +309,7 @@ else
                     </div>
 
                     <!-- Repository Insights -->
-                    <div class="card">
+                    <div class="card border border-primary">
                         <div class="card-header">
                             <h5 class="mb-0">Repository Insights</h5>
                         </div>
@@ -377,7 +377,7 @@ else
             <div class="tab-pane fade show active" id="system-pane" role="tabpanel" aria-labelledby="system-tab">
                 <div class="stack" style="gap: 2rem;">
                     <!-- Authentication Status -->
-                    <div class="card">
+                    <div class="card border-primary">
                         <div class="card-header">
                             <h5 class="mb-0">Authentication Status</h5>
                         </div>
@@ -405,7 +405,7 @@ else
                     </div>
 
                     <!-- GitHub API Status -->
-                    <div class="card">
+                    <div class="card border-secondary">
                         <div class="card-header">
                             <div class="d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">GitHub API Connectivity</h5>
@@ -453,7 +453,7 @@ else
                     </div>
 
                     <!-- Application Information -->
-                    <div class="card">
+                    <div class="card border-primary">
                         <div class="card-header">
                             <h5 class="mb-0">Application Information</h5>
                         </div>
