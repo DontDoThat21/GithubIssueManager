@@ -180,7 +180,7 @@ else if (filteredIssues.Any())
                                 <i class="bi bi-person-plus me-1"></i>
                                 Assign
                             </button>
-                            <button type="button"
+                            @* Feature is broken <button type="button"
                                     class="btn btn-outline-info btn-sm"
                                     disabled="@isCopilotAssigning"
                                     @onclick="() => AssignIssueToCopilotAsync(issue)">
@@ -193,7 +193,7 @@ else if (filteredIssues.Any())
                                     <i class="bi bi-robot me-1"></i>
                                 }
                                 Copilot
-                            </button>
+                            </button> *@
                             <button type="button"
                                     class="btn btn-outline-danger btn-sm"
                                     @onclick="() => ShowDeleteModal(issue)">
@@ -1079,29 +1079,31 @@ else
         }
     }
 
-    private async Task AssignIssueToCopilotAsync(GitHubIssue issue)
-    {
-        if (issue == null) return;
-        copilotAssigning[issue.Number] = true;
-        StateHasChanged();
-        try
-        {
-            var updatedIssue = await GitHubService.AssignIssueToCopilotAsync(Owner, Repo, issue.Number);
-            var index = allIssues.FindIndex(i => i.Number == issue.Number);
-            if (index >= 0)
-            {
-                allIssues[index] = updatedIssue;
-                ApplyFilters();
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error assigning issue to Copilot: {ex.Message}");
-        }
-        finally
-        {
-            copilotAssigning[issue.Number] = false;
-            StateHasChanged();
-        }
-    }
+   // TODO May 
+   //private async Task AssignIssueToCopilotAsync(GitHubIssue issue)
+   //{
+   //    if (issue == null) return;
+   //    copilotAssigning[issue.Number] = true;
+   //    StateHasChanged();
+   //    try
+   //    {
+   //        // talking w/ GH team makes me think this will never work :/
+   //        var updatedIssue = await GitHubService.AssignIssueToCopilotAsync(Owner, Repo, issue.Number);
+   //        var index = allIssues.FindIndex(i => i.Number == issue.Number);
+   //        if (index >= 0)
+   //        {
+   //            allIssues[index] = updatedIssue;
+   //            ApplyFilters();
+   //        }
+   //    }
+   //    catch (Exception ex)
+   //    {
+   //        Console.WriteLine($"Error assigning issue to Copilot: {ex.Message}");
+   //    }
+   //    finally
+   //    {
+   //        copilotAssigning[issue.Number] = false;
+   //        StateHasChanged();
+   //    }
+   //}
 }
